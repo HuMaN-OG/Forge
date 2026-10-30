@@ -22,8 +22,34 @@ class TaskPlanner {
     let impactDescription = 'Scan workspace directory and list items safely.';
     let riskLevel = isOnline ? 'Medium (External Network Access)' : 'Low (Restricted Local Directory Sandbox)';
 
-    // Analyze specific intent
-    if (/notepad|write.*report|desktop|active\s+window|launch\s+(?:application|app)|press\s+key/i.test(prompt)) {
+    // PRIORITY 1: Read / View / Inspect / Display existing file
+    if (/read|view|inspect|display|show\s+content|cat\s+/i.test(prompt) && /file|document|content|\.[a-zA-Z0-9]+/i.test(prompt)) {
+      title = 'Read Workspace File';
+      plannedTool = REGISTERED_TOOLS.FILE_SYSTEM;
+      toolAction = 'read_file';
+
+      const fileMatch = prompt.match(/([a-zA-Z0-9_\-]+\.[a-zA-Z0-9]+)/i);
+      const targetFile = fileMatch ? fileMatch[1] : 'AI_Report.txt';
+
+      toolParams = {
+        action: 'read_file',
+        targetFile
+      };
+      impactDescription = `Safely read contents of file '${targetFile}' from workspace sandbox and display in chat.`;
+
+    // PRIORITY 2: List Workspace Files / Directory
+    } else if (/list|show|browse|what.*files/i.test(prompt) && /files|dir|directory|workspace|folder/i.test(prompt) && !/windows/i.test(prompt)) {
+      title = 'List Workspace Files';
+      plannedTool = REGISTERED_TOOLS.FILE_SYSTEM;
+      toolAction = 'list_directory';
+      toolParams = {
+        action: 'list_directory',
+        targetDirectory: '.'
+      };
+      impactDescription = 'Scan workspace directory and list items safely.';
+
+    // PRIORITY 3: Desktop UI Automation (Explicit Notepad or Window requests)
+    } else if (/notepad|open\s+explorer|list.*windows|active\s+window|launch\s+(?:application|app)|press\s+key/i.test(prompt)) {
       title = 'Desktop Automation: Notepad Report';
       plannedTool = REGISTERED_TOOLS.DESKTOP_CONTROL;
       riskLevel = 'Medium (Local Desktop UI Automation)';
@@ -45,7 +71,7 @@ class TaskPlanner {
         toolParams = { action: 'launch_application', appName };
         impactDescription = `Launch approved application '${appName}' safely.`;
       } else {
-        // Default / Primary demonstration scenario: Notepad report
+        // Primary demonstration scenario: Notepad report
         title = 'Desktop Automation: Notepad Report';
         toolAction = 'notepad_report';
 
@@ -71,6 +97,7 @@ class TaskPlanner {
         impactDescription = `Launch approved Notepad, enter report on '${topic}', save '${filename}' to canonical workspace sandbox, and verify on disk.`;
       }
 
+    // PRIORITY 4: Excel Spreadsheet Automation
     } else if (/excel|spreadsheet|xlsx|sheet/i.test(prompt)) {
       title = 'Create Structured Excel Workbook';
       plannedTool = REGISTERED_TOOLS.EXCEL_WRITER;
@@ -135,6 +162,7 @@ class TaskPlanner {
       };
       impactDescription = `Create Excel workbook '${filename}' with ${headers.length} headers and ${rows.length} data rows inside workspace sandbox.`;
 
+    // PRIORITY 5: Organize Files by Extension
     } else if (/organize|sort|categorize/i.test(prompt) && /file|folder|dir|extension/i.test(prompt)) {
       title = 'Organize Workspace Files by Extension';
       plannedTool = REGISTERED_TOOLS.FILE_SYSTEM;
@@ -146,6 +174,7 @@ class TaskPlanner {
       };
       impactDescription = 'Safely scan workspace directory and organize loose files into categorized subfolders with collision avoidance.';
 
+    // PRIORITY 6: Create Text/Markdown File
     } else if (/create|write|make|generate/i.test(prompt) && /file|text|note|document|log/i.test(prompt)) {
       title = 'Create Workspace File';
       plannedTool = REGISTERED_TOOLS.FILE_SYSTEM;
@@ -167,20 +196,6 @@ class TaskPlanner {
         overwrite: false
       };
       impactDescription = `Create file '${targetFile}' inside workspace sandbox without overwriting existing files.`;
-
-    } else if (/read|view|inspect|show/i.test(prompt) && /file|document|content/i.test(prompt)) {
-      title = 'Read Workspace File';
-      plannedTool = REGISTERED_TOOLS.FILE_SYSTEM;
-      toolAction = 'read_file';
-
-      const fileMatch = prompt.match(/([a-zA-Z0-9_\-]+\.[a-zA-Z0-9]+)/i);
-      const targetFile = fileMatch ? fileMatch[1] : 'note.txt';
-
-      toolParams = {
-        action: 'read_file',
-        targetFile
-      };
-      impactDescription = `Safely read contents of file '${targetFile}' from workspace sandbox.`;
     }
 
     // 3. Construct deterministic 7-stage lifecycle steps

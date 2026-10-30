@@ -199,12 +199,22 @@ export function TaskProvider({ children }) {
         ? `\n\nVerified Artifacts (${artifactCount}):\n` + executedTask.artifacts.map(a => `• **${a.name}** (${a.size} bytes) - \`${a.path}\``).join('\n')
         : '';
 
+      let outputDetails = '';
+      if (executedTask.executionOutput?.content) {
+        outputDetails = '\n\n📄 **Document Content:**\n```\n' + (executedTask.executionOutput.content || '') + '\n```';
+      } else if (executedTask.executionOutput?.items && Array.isArray(executedTask.executionOutput.items)) {
+        const fileList = executedTask.executionOutput.items.map(i => `• \`${i.name}\` (${i.type}, ${i.size} bytes)`).slice(0, 30).join('\n');
+        outputDetails = `\n\n📁 **Workspace Directory (${executedTask.executionOutput.items.length} items):**\n${fileList}`;
+      } else if (executedTask.executionOutput?.summary) {
+        outputDetails = `\n\n${executedTask.executionOutput.summary}`;
+      }
+
       setMessages(prev => [
         ...prev,
         {
           id: `msg-done-${Date.now()}`,
           sender: 'assistant',
-          text: `Task execution verified and completed successfully.\n\nAll produced operations conform to security policy.${artifactSummary}`,
+          text: `Task execution verified and completed successfully.\n\nAll produced operations conform to security policy.${outputDetails}${artifactSummary}`,
           timestamp: new Date().toISOString(),
           taskId: executedTask.id
         }

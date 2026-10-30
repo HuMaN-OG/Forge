@@ -40,7 +40,7 @@ class OllamaService {
   /**
    * Sends a structured chat request to Ollama
    */
-  async chat({ messages, format = 'json', temperature = 0.1, stream = false }) {
+  async chat({ messages, format = 'json', temperature = 0.1, stream = false, numPredict = 200 }) {
     const url = `${this.baseUrl}/api/chat`;
     const body = {
       model: this.model,
@@ -49,7 +49,8 @@ class OllamaService {
       stream,
       options: {
         temperature,
-        top_p: 0.9
+        top_p: 0.9,
+        num_predict: numPredict
       }
     };
 

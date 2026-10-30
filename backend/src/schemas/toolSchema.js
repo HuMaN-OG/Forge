@@ -52,7 +52,8 @@ const DESKTOP_ACTIONS_LIST = [
 
 // Milestone-restricted allowed tool actions
 const ALLOWED_MILESTONE_ACTIONS = {
-  'file_system': ['list_directory', 'create_file'],
+  'file_system': ['list_directory', 'read_file', 'write_file', 'create_file', 'move_file', 'organize_by_extension'],
+  'excel_writer': ['create_workbook', 'add_sheet', 'write_data', 'apply_formula'],
   'desktop_control': DESKTOP_ACTIONS_LIST
 };
 

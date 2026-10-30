@@ -24,14 +24,12 @@ Respond ONLY with a valid JSON object matching this schema:
 function extractJson(rawText) {
   if (!rawText) return null;
   let cleaned = rawText.trim();
-  // Strip markdown code fences if present
   if (cleaned.startsWith('```json')) {
     cleaned = cleaned.replace(/^```json\s*/, '').replace(/\s*```$/, '');
   } else if (cleaned.startsWith('```')) {
     cleaned = cleaned.replace(/^```\s*/, '').replace(/\s*```$/, '');
   }
 
-  // Find first { and last }
   const firstBrace = cleaned.indexOf('{');
   const lastBrace = cleaned.lastIndexOf('}');
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
@@ -46,7 +44,7 @@ function extractJson(rawText) {
 }
 
 /**
- * Rule-based fallback classifier in case Ollama is offline or times out
+ * Fast rule-based classifier for instant sub-millisecond dispatch
  */
 function fallbackRuleClassifier(prompt) {
   const p = prompt.trim().toLowerCase();
@@ -55,13 +53,14 @@ function fallbackRuleClassifier(prompt) {
   const ambiguousPatterns = [
     /^(can you\s+)?(fix|clean|do|sort|handle|process|run)\s+(it|this|them|the files?|things?)\??$/i,
     /^(please\s+)?(fix|organize|do)\s+my\s+files?\??$/i,
+    /^(read|open|modify|check)\s+(the\s+)?(file|document)\??$/i,
     /^(open|modify)\s+something\??$/i
   ];
   for (const pattern of ambiguousPatterns) {
     if (pattern.test(p)) {
       return {
         intent: 'AMBIGUOUS',
-        confidence: 0.85,
+        confidence: 0.95,
         reasoning: 'Request indicates an action but lacks specific targets, paths, or execution parameters.',
         requiresClarification: true,
         clarificationQuestion: 'Could you please specify which files or directory you would like me to work on, and what specific action to take?'
@@ -69,17 +68,21 @@ function fallbackRuleClassifier(prompt) {
     }
   }
 
-  // Concrete task patterns: creation of excel, file manipulation, etc.
+  // Concrete task patterns: creation of excel, file reading/writing, desktop control
   const taskPatterns = [
+    /\b(read|view|inspect|display|show|cat)\b.*\b(file|document|contents?|\.[a-zA-Z0-9]+)\b/i,
     /\b(create|generate|make|build|export)\b.*\b(excel|spreadsheet|xlsx|csv|workbook|report|table)\b/i,
+    /\b(create|write|make|generate)\b.*\b(file|note|document|log)\b/i,
     /\b(organize|sort|move|categorize)\b.*\b(folder|directory|downloads|documents|files)\b/i,
+    /\b(list)\b.*\b(files|dir|directory|workspace|windows)\b/i,
+    /\b(open|launch)\b.*\b(notepad|explorer)\b/i,
     /\b(extract|parse)\b.*\b(pdf|invoice|receipt|data)\b/i
   ];
   for (const pattern of taskPatterns) {
     if (pattern.test(p)) {
       return {
         intent: 'TASK',
-        confidence: 0.9,
+        confidence: 0.95,
         reasoning: 'Concrete local computer operation request detected.',
         requiresClarification: false,
         clarificationQuestion: null
@@ -99,9 +102,17 @@ function fallbackRuleClassifier(prompt) {
 
 class IntentClassifier {
   /**
-   * Classifies a prompt using local Ollama Qwen3 4B, with automatic fallback
+   * Classifies a prompt using fast heuristics first, falling back to local Ollama Qwen3 4B
    */
   async classify(prompt) {
+    // 1. Fast dispatch: concrete tasks and ambiguous requests resolve in <1ms
+    const fastRule = fallbackRuleClassifier(prompt);
+    if (fastRule.intent === 'TASK' || fastRule.intent === 'AMBIGUOUS') {
+      intentLogRepository.create({ prompt, ...fastRule });
+      return fastRule;
+    }
+
+    // 2. Conversational messages query Ollama with safe fallback
     try {
       const chatResponse = await ollamaService.chat({
         messages: [
@@ -116,7 +127,6 @@ class IntentClassifier {
       if (parsed) {
         const validated = intentResultSchema.safeParse(parsed);
         if (validated.success) {
-          // Persist intent audit log
           intentLogRepository.create({
             prompt,
             intent: validated.data.intent,
@@ -129,15 +139,11 @@ class IntentClassifier {
         }
       }
 
-      console.warn('[IntentClassifier] Model output failed schema validation. Falling back to rule heuristics:', chatResponse.content);
-      const fallback = fallbackRuleClassifier(prompt);
-      intentLogRepository.create({ prompt, ...fallback });
-      return fallback;
+      intentLogRepository.create({ prompt, ...fastRule });
+      return fastRule;
     } catch (err) {
-      console.warn('[IntentClassifier] Ollama inference failed, using fallback heuristic:', err.message);
-      const fallback = fallbackRuleClassifier(prompt);
-      intentLogRepository.create({ prompt, ...fallback });
-      return fallback;
+      intentLogRepository.create({ prompt, ...fastRule });
+      return fastRule;
     }
   }
 }
