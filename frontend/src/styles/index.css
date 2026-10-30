@@ -1,29 +1,30 @@
 @import "tailwindcss";
 
 :root {
-  --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Geist", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: "Geist Mono", "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", "Geist Mono", "SF Mono", Menlo, Consolas, monospace;
 }
 
 body {
   background-color: #0A0B0E;
   color: #EDEDED;
   font-family: var(--font-sans);
-  letter-spacing: -0.012em;
+  letter-spacing: -0.011em;
   margin: 0;
   padding: 0;
   min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-/* Subtle atmospheric lighting at top of app */
+/* Atmospheric subtle top lighting */
 .bg-ambient-glow {
-  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99, 102, 241, 0.12), rgba(56, 189, 248, 0.04) 50%, transparent 80%);
+  background: radial-gradient(ellipse 90% 60% at 50% -10%, rgba(99, 102, 241, 0.14), rgba(56, 189, 248, 0.05) 45%, transparent 75%);
 }
 
-/* Sleek macOS-style glass overlay */
+/* Polished macOS glass surface */
 .forge-glass {
   background: rgba(16, 18, 27, 0.72);
   backdrop-filter: blur(20px);
@@ -32,11 +33,11 @@ body {
 }
 
 .forge-glass-floating {
-  background: rgba(18, 20, 30, 0.85);
+  background: rgba(18, 20, 30, 0.88);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.04);
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.04);
 }
 
 .forge-card {
@@ -48,9 +49,15 @@ body {
 .forge-card:hover {
   background: #151822;
   border-color: rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
 }
 
-/* Clean minimal scrollbars */
+/* Terminal & code typography */
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* Smooth minimal scrollbar */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -61,15 +68,10 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.26);
-}
-
-/* Monospace fonts */
-.font-mono {
-  font-family: var(--font-mono);
+  background: rgba(255, 255, 255, 0.24);
 }

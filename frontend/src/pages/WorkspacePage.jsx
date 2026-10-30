@@ -34,63 +34,63 @@ export function WorkspacePage() {
     TASK_STATUS.VERIFYING
   ].includes(activeTask.status);
 
-  // If messages only contain initial welcome and no active task, show clean hero presentation
+  // If messages only contain initial greeting and no active task, show welcoming workspace canvas
   const isFreshSession = messages.length <= 1 && !activeTask;
 
   return (
-    <div className="max-w-4xl mx-auto flex flex-col min-h-[calc(100vh-8rem)] justify-between pb-4">
-      {/* Central Content Area */}
+    <div className="max-w-4xl mx-auto flex flex-col min-h-[calc(100vh-7.5rem)] justify-between pb-2">
+      {/* Central Content Canvas */}
       <div className="flex-1 space-y-6">
         {isFreshSession ? (
-          /* Hero Introduction for Judges & Operators */
-          <div className="py-8 sm:py-12 space-y-8 animate-in fade-in duration-300">
-            {/* Ambient Brand Header */}
+          /* High-Craft Welcome State */
+          <div className="py-6 sm:py-10 space-y-8 animate-in fade-in duration-300">
+            {/* Ambient Logo & Greeting */}
             <div className="text-center space-y-3 max-w-xl mx-auto">
-              <div className="w-14 h-14 mx-auto rounded-2xl bg-white/[0.04] border border-white/[0.08] flex items-center justify-center shadow-lg">
-                <ForgeLogo size={28} />
+              <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-b from-white/[0.08] to-white/[0.02] border border-white/[0.1] flex items-center justify-center shadow-xl">
+                <ForgeLogo size={32} />
               </div>
-              <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+              <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
                 What shall we automate today?
               </h2>
               <p className="text-sm text-[#A1A1AA] leading-relaxed">
-                FORGE is an autonomous computer-use assistant running locally on your hardware. It plans multi-step actions, seeks your explicit approval, and verifies results.
+                FORGE AI plans multi-step tool actions, pauses for your approval, executes locally via Python, and verifies output integrity.
               </p>
             </div>
 
-            {/* Core Capability Pillars */}
+            {/* Capability Feature Badges */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-2xl mx-auto text-xs">
-              <div className="p-3.5 rounded-xl bg-white/[0.025] border border-white/[0.05] space-y-1">
-                <div className="flex items-center gap-2 font-medium text-[#F4F4F5]">
+              <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] space-y-1.5 hover:border-white/[0.1] transition-colors">
+                <div className="flex items-center gap-2 font-medium text-white">
                   <ShieldCheck className="w-4 h-4 text-emerald-400 stroke-[1.8]" />
-                  <span>Airgap Enforced</span>
+                  <span>Airgap Protection</span>
                 </div>
                 <p className="text-[11px] text-[#71717A] leading-relaxed">
-                  Zero cloud telemetry. Local Ollama LLM and local Python execution sandbox.
+                  Local Ollama LLM and offline sandboxed tools. Zero outbound network leaks.
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-white/[0.025] border border-white/[0.05] space-y-1">
-                <div className="flex items-center gap-2 font-medium text-[#F4F4F5]">
+              <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] space-y-1.5 hover:border-white/[0.1] transition-colors">
+                <div className="flex items-center gap-2 font-medium text-white">
                   <Terminal className="w-4 h-4 text-sky-400 stroke-[1.8]" />
-                  <span>7-Stage Pipeline</span>
+                  <span>Deterministic Plan</span>
                 </div>
                 <p className="text-[11px] text-[#71717A] leading-relaxed">
-                  Deterministic workflow from Intent Understanding to Post-execution Verification.
+                  7-stage lifecycle with step verifications and runtime execution telemetry.
                 </p>
               </div>
 
-              <div className="p-3.5 rounded-xl bg-white/[0.025] border border-white/[0.05] space-y-1">
-                <div className="flex items-center gap-2 font-medium text-[#F4F4F5]">
+              <div className="p-4 rounded-2xl bg-white/[0.02] border border-white/[0.05] space-y-1.5 hover:border-white/[0.1] transition-colors">
+                <div className="flex items-center gap-2 font-medium text-white">
                   <FolderCheck className="w-4 h-4 text-indigo-400 stroke-[1.8]" />
-                  <span>Human-in-the-Loop</span>
+                  <span>Operator Control</span>
                 </div>
                 <p className="text-[11px] text-[#71717A] leading-relaxed">
-                  No arbitrary disk alterations without your explicit authorization.
+                  Human-in-the-loop authorization gate before any filesystem modifications.
                 </p>
               </div>
             </div>
 
-            {/* Suggested Starter Actions */}
+            {/* Popular Starter Tasks */}
             <div className="pt-2">
               <SuggestedTasks onSelectSuggestion={submitPrompt} />
             </div>
