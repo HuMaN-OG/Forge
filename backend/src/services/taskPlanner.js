@@ -239,14 +239,19 @@ class TaskPlanner {
       };
       impactDescription = `Launch Notepad on desktop, type '${text}', and save document as '${filename}' inside workspace sandbox.`;
 
-    // PRIORITY 3: Application Launching
-    } else if (/\b(launch|open)\b\s+(?:approved\s+)?(?:application\s+|app\s+)?(notepad|file\s+explorer|explorer|calc|calculator|word|winword|excel|powerpoint|ppt|chrome|edge|vscode|code)\b/i.test(prompt) &&
-               !/\b(create|make|generate|build|write|spreadsheet|workbook)\b/i.test(prompt)) {
-      const appMatch = prompt.match(/\b(notepad|file\s+explorer|explorer|calc|calculator|word|winword|excel|powerpoint|ppt|chrome|edge|vscode|code)\b/i);
-      let appName = appMatch ? appMatch[1].toLowerCase().replace('file ', 'file_') : 'notepad';
-      if (appName === 'code') appName = 'vscode';
-      if (appName === 'ppt') appName = 'powerpoint';
-      if (appName === 'calculator') appName = 'calc';
+    // PRIORITY 3: Universal Desktop Application Launching (open ANY app on laptop)
+    } else if (/\b(launch|open|start|run)\b/i.test(prompt) &&
+               !/\b(create|make|generate|build|write|spreadsheet|workbook)\b/i.test(prompt) &&
+               !/\.[a-zA-Z0-9]{2,5}\b/i.test(prompt) &&
+               !/\b(folder|directory)\b/i.test(prompt) &&
+               !/\b(calc|calculator)\b.*\d+/i.test(prompt)) {
+      const appMatch = prompt.match(/\b(?:launch|open|start|run)\b\s+(?:approved\s+)?(?:the\s+)?(?:app(?:lication)?\s+)?([a-zA-Z0-9_\-\s]{2,35}?)(?:\s+(?:at|in)\s+.*|\s+app|\s+application)?$/i) ||
+                       prompt.match(/\b(?:launch|open|start|run)\b\s+(?:approved\s+)?(?:the\s+)?(?:app(?:lication)?\s+)?([a-zA-Z0-9_\-]+)/i);
+      let appName = appMatch ? appMatch[1].trim() : 'notepad';
+      if (/^file\s+explorer$/i.test(appName)) appName = 'file_explorer';
+      if (/^vs\s*code$/i.test(appName)) appName = 'vscode';
+      if (/^ppt$/i.test(appName)) appName = 'powerpoint';
+      if (/^calc$/i.test(appName)) appName = 'calculator';
 
       title = `Launch Desktop Application (${appName})`;
       plannedTool = REGISTERED_TOOLS.DESKTOP_CONTROL;
@@ -256,7 +261,7 @@ class TaskPlanner {
         appName,
         targetDirectory: 'C:\\Users\\HP\\Desktop\\CODE\\Forge\\workspace_sandbox'
       };
-      impactDescription = `Launch approved application '${appName}' safely in foreground and verify its window on desktop.`;
+      impactDescription = `Launch application '${appName}' safely in foreground and verify its window on desktop.`;
 
     // PRIORITY 4: Open Verified Document in Approved Desktop Application
     } else if (/\bopen\b/i.test(prompt) && (/\.[a-zA-Z0-9]+/i.test(prompt) || /\bin\s+(notepad|word|excel|powerpoint|calc)/i.test(prompt)) &&

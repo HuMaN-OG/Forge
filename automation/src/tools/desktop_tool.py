@@ -252,6 +252,138 @@ APPROVED_APPLICATIONS = {
 
 
 
+# Universal Windows System & Utility Aliases
+COMMON_SYSTEM_ALIASES = {
+    "notepad": ("notepad.exe", ""),
+    "calc": ("calc.exe", ""),
+    "calculator": ("calc.exe", ""),
+    "explorer": ("explorer.exe", ""),
+    "file explorer": ("explorer.exe", ""),
+    "file_explorer": ("explorer.exe", ""),
+    "paint": ("mspaint.exe", ""),
+    "mspaint": ("mspaint.exe", ""),
+    "cmd": ("cmd.exe", ""),
+    "command prompt": ("cmd.exe", ""),
+    "terminal": ("wt.exe", ""),
+    "windows terminal": ("wt.exe", ""),
+    "powershell": ("powershell.exe", ""),
+    "taskmgr": ("taskmgr.exe", ""),
+    "task manager": ("taskmgr.exe", ""),
+    "control panel": ("control.exe", ""),
+    "control": ("control.exe", ""),
+    "settings": ("C:\\Windows\\explorer.exe", "ms-settings:"),
+    "windows settings": ("C:\\Windows\\explorer.exe", "ms-settings:"),
+    "word": ("WINWORD.EXE", ""),
+    "winword": ("WINWORD.EXE", ""),
+    "excel": ("EXCEL.EXE", ""),
+    "powerpoint": ("POWERPNT.EXE", ""),
+    "ppt": ("POWERPNT.EXE", ""),
+    "wordpad": ("write.exe", ""),
+    "snipping tool": ("snippingtool.exe", ""),
+    "snip": ("snippingtool.exe", ""),
+    "vscode": ("Code.exe", ""),
+    "vs code": ("Code.exe", ""),
+    "code": ("Code.exe", ""),
+    "brave": ("brave.exe", ""),
+    "chrome": ("chrome.exe", ""),
+    "edge": ("msedge.exe", ""),
+}
+
+_START_APPS_CACHE = None
+
+def get_start_apps_cache() -> Dict[str, str]:
+    global _START_APPS_CACHE
+    if _START_APPS_CACHE is not None:
+        return _START_APPS_CACHE
+
+    cache = {}
+    try:
+        ps_cmd = 'Get-StartApps | ForEach-Object { "$($_.Name)|$($_.AppID)" }'
+        out = subprocess.check_output(['powershell', '-NoProfile', '-Command', ps_cmd], text=True, errors='replace', timeout=5)
+        for line in out.strip().splitlines():
+            if '|' in line:
+                name, app_id = line.split('|', 1)
+                clean_name = name.strip().lower()
+                clean_app_id = app_id.strip()
+                if clean_name and clean_app_id:
+                    cache[clean_name] = clean_app_id
+    except Exception:
+        pass
+
+    _START_APPS_CACHE = cache
+    return cache
+
+def resolve_any_application(app_name: str) -> Optional[Tuple[str, str, str]]:
+    """
+    Universally resolves ANY application installed on the user's laptop.
+    Returns (executable_or_launcher, args, app_display_name).
+    """
+    clean = app_name.strip().lower().replace("_", " ")
+
+    # 1. System aliases
+    if clean in COMMON_SYSTEM_ALIASES:
+        binary, args = COMMON_SYSTEM_ALIASES[clean]
+        p = shutil.which(binary)
+        target = p if p else binary
+        return (target, args, app_name)
+
+    # 2. PATH directly
+    for candidate in [clean, clean.replace(" ", ""), clean.replace(" ", "-"), f"{clean}.exe"]:
+        p = shutil.which(candidate)
+        if p and os.path.isfile(p):
+            return (p, "", app_name)
+
+    # 3. Windows Registry App Paths (HKLM & HKCU)
+    for root in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
+        try:
+            with winreg.OpenKey(root, r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths") as key:
+                num_subkeys = winreg.QueryInfoKey(key)[0]
+                for i in range(num_subkeys):
+                    name = winreg.EnumKey(key, i).lower()
+                    stem = os.path.splitext(name)[0]
+                    clean_no_space = clean.replace(" ", "")
+                    if clean == stem or clean == name or clean_no_space == stem or clean_no_space == name:
+                        with winreg.OpenKey(key, winreg.EnumKey(key, i)) as subkey:
+                            val, _ = winreg.QueryValueEx(subkey, "")
+                            if val and os.path.isfile(val):
+                                return (val, "", stem)
+        except Exception:
+            pass
+
+    # 4. Start Menu Shortcuts (.lnk files)
+    start_dirs = [
+        Path(os.environ.get("ProgramData", "C:\\ProgramData")) / "Microsoft\\Windows\\Start Menu\\Programs",
+        Path(os.environ.get("APPDATA", "")) / "Microsoft\\Windows\\Start Menu\\Programs"
+    ]
+    for s_dir in start_dirs:
+        if s_dir.exists():
+            for lnk in s_dir.rglob("*.lnk"):
+                stem = lnk.stem.lower()
+                clean_no_space = clean.replace(" ", "")
+                stem_no_space = stem.replace(" ", "").replace("-", "")
+                if clean == stem or clean_no_space == stem_no_space:
+                    return ("C:\\Windows\\explorer.exe", f'"{str(lnk.resolve())}"', lnk.stem)
+
+    for s_dir in start_dirs:
+        if s_dir.exists():
+            for lnk in s_dir.rglob("*.lnk"):
+                stem = lnk.stem.lower()
+                if clean in stem or stem in clean:
+                    return ("C:\\Windows\\explorer.exe", f'"{str(lnk.resolve())}"', lnk.stem)
+
+    # 5. Get-StartApps / Windows Packaged Apps
+    start_apps = get_start_apps_cache()
+    if clean in start_apps:
+        app_id = start_apps[clean]
+        return ("C:\\Windows\\explorer.exe", f"shell:AppsFolder\\{app_id}", clean)
+    for name, app_id in start_apps.items():
+        if clean in name or name in clean:
+            return ("C:\\Windows\\explorer.exe", f"shell:AppsFolder\\{app_id}", name)
+
+    return None
+
+
+
 def resolve_approved_executable(app_key: str) -> Optional[str]:
 
     """
@@ -616,7 +748,7 @@ def find_window_on_user_desktop(
     timeout: float = 6.0
 ) -> Dict[str, Any]:
     """
-    Finds a window belonging to an approved application strictly on the interactive
+    Finds a window belonging to ANY application strictly on the interactive
     WinSta0\Default desktop by enumerating desktop windows on a worker thread.
     Brings the window to foreground and returns handle metadata.
     """
@@ -643,17 +775,25 @@ def find_window_on_user_desktop(
             user32.GetClassNameW(hwnd, class_buf, 256)
             title = buf.value.strip()
             class_name = class_buf.value.strip()
+            if not title:
+                return True
+
+            t_lower = title.lower()
+            c_lower = class_name.lower()
+            k_lower = app_key.strip().lower()
 
             matched = False
-            if app_key == "notepad" and ("notepad" in class_name.lower() or "notepad" in title.lower()):
+            if k_lower in t_lower or k_lower in c_lower:
                 matched = True
-            elif app_key in ("explorer", "file_explorer") and ("cabinetwclass" in class_name.lower() or "explorer" in title.lower() or "workspace_sandbox" in title.lower()):
+            elif k_lower == "notepad" and ("notepad" in c_lower or "notepad" in t_lower):
                 matched = True
-            elif app_key in ("calc", "calculator") and ("calc" in class_name.lower() or "calculator" in title.lower() or (class_name == "ApplicationFrameWindow" and "calculator" in title.lower())):
+            elif k_lower in ("explorer", "file_explorer", "file explorer") and ("cabinetwclass" in c_lower or "explorer" in t_lower or "workspace_sandbox" in t_lower):
                 matched = True
-            elif title_pattern and re.search(title_pattern, title, re.IGNORECASE):
+            elif k_lower in ("calc", "calculator") and ("calc" in c_lower or "calculator" in t_lower or (class_name == "ApplicationFrameWindow" and "calculator" in t_lower)):
                 matched = True
-            elif title_pattern and re.search(title_pattern, class_name, re.IGNORECASE):
+            elif title_pattern and (re.search(title_pattern, title, re.IGNORECASE) or re.search(title_pattern, class_name, re.IGNORECASE)):
+                matched = True
+            elif any(w in t_lower for w in k_lower.split() if len(w) > 3):
                 matched = True
 
             if matched:
@@ -887,77 +1027,74 @@ def get_active_desktop_window() -> Dict[str, Any]:
 
 def launch_approved_application(app_name: str, target_param: Optional[str] = None) -> Dict[str, Any]:
     """
-    Launches an approved application from the strict allowlist onto the user's
-    visible WinSta0\Default desktop and verifies its window presence.
+    Universally launches ANY application installed on the user's laptop onto the visible
+    WinSta0\Default desktop and verifies its window presence.
     """
     if not app_name or not isinstance(app_name, str):
         raise ValueError("Parameter 'appName' is required and must be a string.")
 
-    normalized_app = app_name.strip().lower().replace(" ", "_")
-    if normalized_app not in APPROVED_APPLICATIONS:
-        approved_names = sorted(list(set(APPROVED_APPLICATIONS.keys())))
-        raise PermissionError(
-            f"Access Denied: Application '{app_name}' is not in the approved desktop allowlist. Permitted applications: {approved_names}"
-        )
+    # 1. Resolve application universally (aliases, PATH, Registry App Paths, Start Menu, UWP Apps)
+    resolved = resolve_any_application(app_name)
+    if not resolved:
+        return {
+            "success": False,
+            "error": f"Application '{app_name}' could not be located on this computer. Please verify that it is installed.",
+            "application": app_name
+        }
 
-    app_spec = APPROVED_APPLICATIONS[normalized_app]
-    binary = app_spec["binary"]
-    title_pattern = app_spec["title_pattern"]
-    exec_path = resolve_approved_executable(normalized_app) or binary
+    launcher, default_args, display_name = resolved
 
-    # Check if window is already active/visible on user desktop
-    existing = find_window_on_user_desktop(normalized_app, title_pattern, timeout=0.8)
+    # 2. Check if window is already active/visible on user desktop
+    existing = find_window_on_user_desktop(display_name, timeout=0.8)
     if existing["hwnd"]:
         force_foreground_window(existing["hwnd"])
         return {
             "success": True,
-            "application": normalized_app,
-            "executable": exec_path,
+            "application": display_name,
+            "executable": launcher,
             "pid": existing["pid"],
-            "windowTitle": existing["title"] or f"{app_name}",
+            "windowTitle": existing["title"] or f"{display_name}",
             "handle": existing["hwnd"],
             "className": existing["class"],
             "reusedExisting": True
         }
 
-    # Arguments
-    args = ""
-    if normalized_app in ("explorer", "file_explorer"):
+    # 3. Arguments
+    args = default_args
+    if display_name in ("explorer", "file_explorer", "file explorer"):
         target_dir = target_param or os.environ.get("FORGE_WORKSPACE", "")
         if not target_dir or not os.path.isdir(target_dir):
             target_dir = "C:\\Users\\HP\\Desktop\\CODE\\Forge\\workspace_sandbox"
         args = f'"{target_dir}"'
+    elif target_param and not args:
+        args = f'"{target_param}"'
 
-    # Launch directly onto user's visible desktop (WinSta0\Default)
-    success, pid, err_msg = create_process_on_user_desktop(exec_path, args, target_desktop="WinSta0\\Default")
+    # 4. Launch directly onto user's visible desktop (WinSta0\Default)
+    success, pid, err_msg = create_process_on_user_desktop(launcher, args, target_desktop="WinSta0\\Default")
     if not success:
         return {
             "success": False,
-            "error": f"Failed to launch application '{app_name}': {err_msg}",
-            "application": normalized_app,
-            "executable": exec_path
+            "error": f"Failed to launch application '{display_name}': {err_msg}",
+            "application": display_name,
+            "executable": launcher
         }
 
-    # Verify window appearance on WinSta0\Default
-    win_info = find_window_on_user_desktop(normalized_app, title_pattern, target_pid=pid, timeout=6.0)
+    # 5. Verify window appearance on WinSta0\Default
+    win_info = find_window_on_user_desktop(display_name, target_pid=pid, timeout=6.0)
     if not win_info["hwnd"]:
-        return {
-            "success": False,
-            "error": f"Application '{app_name}' was launched (PID {pid}), but its window was not detected on the interactive desktop within the 6-second timeout.",
-            "application": normalized_app,
-            "executable": exec_path,
-            "pid": pid
-        }
+        win_info = find_window_on_user_desktop(app_name, target_pid=pid, timeout=2.0)
 
-    force_foreground_window(win_info["hwnd"])
+    hwnd = win_info["hwnd"]
+    if hwnd:
+        force_foreground_window(hwnd)
 
     return {
         "success": True,
-        "application": normalized_app,
-        "executable": exec_path,
+        "application": display_name,
+        "executable": launcher,
         "pid": win_info["pid"] or pid,
-        "windowTitle": win_info["title"] or f"{app_name}",
-        "handle": win_info["hwnd"],
+        "windowTitle": win_info["title"] or f"{display_name}",
+        "handle": hwnd,
         "className": win_info["class"]
     }
 

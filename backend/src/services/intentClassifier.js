@@ -237,7 +237,7 @@ function fallbackRuleClassifier(prompt) {
     /\b(size|info|metadata|stat)\b.*\b(file|document|\.[a-zA-Z0-9]+)\b/i,
     /\b(organize|sort|move|categorize)\b.*\b(folder|directory|downloads|documents|files)\b/i,
     /\b(list)\b.*\b(files|dir|directory|workspace|windows)\b/i,
-    /\b(open|launch)\b.*\b(notepad|explorer|word|winword|excel|powerpoint|ppt|chrome|edge|vscode|code|calc|calculator|generated|\.[a-zA-Z0-9]+)\b/i,
+    /\b(open|launch|start|run)\b\s+(?:approved\s+)?(?:the\s+)?(?:app(?:lication)?\s+)?([a-zA-Z0-9_\-\s]+)\b/i,
     /\b(extract|parse)\b.*\b(pdf|invoice|receipt|data|document)\b/i  ];
 
   for (const pattern of taskPatterns) {
