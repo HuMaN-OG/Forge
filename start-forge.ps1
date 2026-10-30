@@ -131,8 +131,8 @@ if ($frontendOnline) {
     Write-Host "  -> Vite Frontend is already running on http://127.0.0.1:5173 (reusing existing instance)." -ForegroundColor Green
 } else {
     Write-Host "  -> Launching Vite Frontend on http://127.0.0.1:5173..." -ForegroundColor White
-    $frontendProc = Start-Process -FilePath "cmd.exe" `
-        -ArgumentList "/c npm run dev" `
+    $frontendProc = Start-Process -FilePath "npm.cmd" `
+        -ArgumentList "run", "dev" `
         -WorkingDirectory (Join-Path $root "frontend") `
         -PassThru -WindowStyle Hidden
 
@@ -140,7 +140,7 @@ if ($frontendOnline) {
 
     # Poll frontend
     $ready = $false
-    for ($i = 0; $i -lt 12; $i++) {
+    for ($i = 0; $i -lt 14; $i++) {
         Start-Sleep -Milliseconds 500
         if (Test-Endpoint "http://127.0.0.1:5173" 1) {
             $ready = $true
@@ -151,7 +151,7 @@ if ($frontendOnline) {
     if ($ready) {
         Write-Host "  -> Vite Frontend is READY (PID: $($frontendProc.Id))." -ForegroundColor Green
     } else {
-        Write-Host "  -> WARNING: Vite Frontend did not respond within 6s. Check frontend logs." -ForegroundColor Yellow
+        Write-Host "  -> WARNING: Vite Frontend did not respond within 7s. Check frontend logs." -ForegroundColor Yellow
     }
 }
 
@@ -160,21 +160,21 @@ if ($services.Count -gt 0) {
     $existingPids = @{}
     if (Test-Path $pidFile) {
         try {
-            $existingPids = Get-Content $pidFile -Raw | ConvertFrom-Json -AsHashtable
+            $existingPids = (Get-Content $pidFile -Raw | ConvertFrom-Json)
         } catch {}
     }
     foreach ($k in $services.Keys) {
-        $existingPids[$k] = $services[$k]
+        $existingPids | Add-Member -NotePropertyName $k -NotePropertyValue $services[$k] -Force
     }
     $existingPids | ConvertTo-Json | Set-Content $pidFile -Encoding UTF8
 }
 
-Write-Host "`n====================================================" -ForegroundColor Green
-Write-Host "            FORGE AI IS FULLY OPERATIONAL            " -ForegroundColor Green
-Write-Host "====================================================" -ForegroundColor Green
-Write-Host "  * Frontend Web UI:    http://localhost:5173" -ForegroundColor Cyan
-Write-Host "  * Express Backend:    http://127.0.0.1:3000" -ForegroundColor White
-Write-Host "  * Python Automation:  http://127.0.0.1:8000" -ForegroundColor White
-Write-Host "  * Local LLM (Ollama): http://127.0.0.1:11434 (qwen3:4b)" -ForegroundColor White
-Write-Host "  * Canonical Sandbox:  $canonicalWorkspace" -ForegroundColor White
-Write-Host "`nTo cleanly stop services, run: .\stop-forge.ps1" -ForegroundColor Yellow
+Write-Host "`n====================================================" -ForegroundColor Cyan
+Write-Host "            FORGE AI IS FULLY OPERATIONAL            " -ForegroundColor Cyan
+Write-Host "====================================================" -ForegroundColor Cyan
+Write-Host "  * Frontend Web UI:    http://localhost:5173" -ForegroundColor Green
+Write-Host "  * Express Backend:    http://127.0.0.1:3000" -ForegroundColor Green
+Write-Host "  * Python Automation:  http://127.0.0.1:8000" -ForegroundColor Green
+Write-Host "  * Local LLM (Ollama): http://127.0.0.1:11434 (qwen3:4b)" -ForegroundColor Green
+Write-Host "  * Canonical Sandbox:  $canonicalWorkspace" -ForegroundColor Green
+Write-Host "`nTo cleanly stop services, run: .\stop-forge.ps1" -ForegroundColor DarkGray

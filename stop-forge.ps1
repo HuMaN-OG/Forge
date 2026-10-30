@@ -42,7 +42,7 @@ foreach ($port in $portsToStop) {
             if ($pidVal -gt 0 -and -not $stoppedPids.Contains($pidVal)) {
                 $proc = Get-Process -Id $pidVal -ErrorAction SilentlyContinue
                 if ($proc -and ($proc.ProcessName -match "node|python|uvicorn|cmd")) {
-                    Write-Host "Stopping process on port $port ($($proc.ProcessName), PID $pidVal)..." -ForegroundColor White
+                    Write-Host "Stopping process on port $($port) ($($proc.ProcessName), PID $pidVal)..." -ForegroundColor White
                     Stop-Process -Id $pidVal -Force -ErrorAction SilentlyContinue
                     [void]$stoppedPids.Add($pidVal)
                 }
@@ -57,12 +57,11 @@ Write-Host "`nPort Status Verification:" -ForegroundColor White
 foreach ($port in $portsToStop) {
     $conn = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
     if ($conn) {
-        Write-Host "  * Port $port: STILL BOUND (PID $($conn.OwningProcess))" -ForegroundColor Yellow
+        Write-Host "  * Port $($port): STILL BOUND (PID $($conn.OwningProcess))" -ForegroundColor Yellow
     } else {
-        Write-Host "  * Port $port: FREED / OFFLINE" -ForegroundColor Green
+        Write-Host "  * Port $($port): FREED / OFFLINE" -ForegroundColor Green
     }
 }
 
 Write-Host "`nAll FORGE AI services stopped safely." -ForegroundColor Green
 Write-Host "Unrelated system processes were NOT affected." -ForegroundColor Cyan
-
