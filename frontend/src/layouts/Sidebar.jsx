@@ -1,129 +1,134 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
-  Bot, 
   Terminal, 
-  History, 
+  Clock, 
   Cpu, 
-  FolderArchive, 
-  Settings, 
-  PlusCircle, 
+  Folder, 
+  Sliders, 
+  Plus, 
   Wifi, 
   WifiOff 
 } from 'lucide-react';
+import { ForgeLogo } from '../components/common/ForgeLogo';
 import { useSystem } from '../context/SystemContext';
 import { useTasks } from '../context/TaskContext';
-import { Badge } from '../components/common/Badge';
 
 export function Sidebar() {
   const { isEffectivelyOnline, selectedModel, backendStatus } = useSystem();
   const { resetActiveTask } = useTasks();
 
-  const navLinks = [
-    { to: '/', label: 'Workspace', icon: Terminal, exact: true },
-    { to: '/history', label: 'Task History', icon: History },
-    { to: '/memory', label: 'Memory & Experience', icon: Cpu },
-    { to: '/files', label: 'Generated Files', icon: FolderArchive },
-    { to: '/settings', label: 'Settings', icon: Settings },
+  const navItems = [
+    { to: '/', label: 'Workspace', icon: Terminal, exact: true, badge: null },
+    { to: '/history', label: 'Task History', icon: Clock, badge: null },
+    { to: '/memory', label: 'Memory Store', icon: Cpu, badge: null },
+    { to: '/files', label: 'Artifacts', icon: Folder, badge: null },
+    { to: '/settings', label: 'Settings', icon: Sliders, badge: null },
   ];
 
   return (
-    <aside className="w-64 bg-[#0A0E18] border-r border-slate-800/80 flex flex-col h-screen select-none shrink-0">
-      {/* Brand Identity */}
-      <div className="p-5 border-b border-slate-800/60 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/25 ring-1 ring-cyan-400/40">
-            <Bot className="w-5 h-5 text-slate-950 stroke-[2.5]" />
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-bold tracking-wider text-slate-100 text-base">FORGE</span>
-              <span className="text-[10px] font-black px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">AI</span>
-            </div>
-            <p className="text-[11px] text-slate-400 font-mono">Autonomous Computer-Use</p>
+    <aside className="w-60 bg-[#0C0E14] border-r border-white/[0.06] flex flex-col h-screen select-none shrink-0 text-xs">
+      {/* Brand Header */}
+      <div className="h-14 px-4 border-b border-white/[0.05] flex items-center justify-between">
+        <div className="flex items-center gap-2.5">
+          <ForgeLogo size={20} />
+          <div className="flex items-baseline gap-1.5">
+            <span className="font-semibold tracking-tight text-[#F1F3F5] text-sm">FORGE</span>
+            <span className="text-[10px] font-mono text-[#687180]">AI</span>
           </div>
         </div>
+        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.04] text-[#929AA8] border border-white/[0.06]">
+          v0.9.2
+        </span>
       </div>
 
-      {/* New Task Action */}
-      <div className="px-4 py-4">
+      {/* Primary Action */}
+      <div className="p-3">
         <button
           onClick={resetActiveTask}
-          className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-semibold text-sm shadow-md shadow-cyan-500/20 active:scale-[0.98] transition-all"
+          className="w-full flex items-center justify-between px-3 py-2 rounded-lg bg-white/[0.04] hover:bg-white/[0.08] text-[#F1F3F5] border border-white/[0.08] hover:border-white/[0.14] transition-all group active:scale-[0.99]"
         >
-          <PlusCircle className="w-4 h-4" />
-          <span>New Assistant Task</span>
+          <div className="flex items-center gap-2 text-xs font-medium">
+            <Plus className="w-3.5 h-3.5 text-[#77D9E8] stroke-[2]" />
+            <span>New Task</span>
+          </div>
+          <span className="text-[10px] font-mono text-[#687180] bg-black/40 px-1.5 py-0.5 rounded border border-white/[0.05]">
+            ⌘N
+          </span>
         </button>
       </div>
 
-      {/* Navigation Links */}
-      <nav className="flex-1 px-3 space-y-1.5 overflow-y-auto">
-        <div className="px-3 py-1 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-          Workspace Sections
+      {/* Navigation Items */}
+      <nav className="flex-1 px-2.5 space-y-0.5 overflow-y-auto">
+        <div className="px-2 pt-2 pb-1.5 text-[10px] font-semibold text-[#687180] tracking-wider uppercase">
+          Operations
         </div>
-        {navLinks.map((link) => {
-          const Icon = link.icon;
+        {navItems.map((item) => {
+          const Icon = item.icon;
           return (
             <NavLink
-              key={link.to}
-              to={link.to}
-              end={link.exact}
+              key={item.to}
+              to={item.to}
+              end={item.exact}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium transition-all ${
+                `flex items-center justify-between px-2.5 py-2 rounded-lg text-xs font-medium transition-colors ${
                   isActive
-                    ? 'bg-cyan-500/10 text-cyan-300 border border-cyan-500/30 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                    ? 'bg-white/[0.07] text-[#F1F3F5] shadow-xs'
+                    : 'text-[#929AA8] hover:text-[#F1F3F5] hover:bg-white/[0.03]'
                 }`
               }
             >
-              <Icon className="w-4 h-4 shrink-0" />
-              <span>{link.label}</span>
+              <div className="flex items-center gap-2.5">
+                <Icon className="w-4 h-4 shrink-0 stroke-[1.75]" />
+                <span>{item.label}</span>
+              </div>
             </NavLink>
           );
         })}
       </nav>
 
-      {/* Hardware & System Telemetry Footer */}
-      <div className="p-4 border-t border-slate-800/80 bg-[#080C14]">
-        <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 space-y-2.5">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-400">Environment</span>
-            <Badge variant={isEffectivelyOnline ? 'emerald' : 'amber'} className="text-[10px] py-0 px-2">
+      {/* Engine Telemetry & Operator Profile Footer */}
+      <div className="p-3 border-t border-white/[0.05] bg-[#0A0C12] space-y-2">
+        <div className="px-2 py-1.5 rounded-lg bg-white/[0.025] border border-white/[0.05] space-y-1.5">
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="text-[#687180]">Network</span>
+            <div className="flex items-center gap-1.5">
               {isEffectivelyOnline ? (
-                <>
-                  <Wifi className="w-3 h-3 text-emerald-400" />
-                  <span>Online</span>
-                </>
+                <Wifi className="w-3 h-3 text-emerald-400 stroke-[1.75]" />
               ) : (
-                <>
-                  <WifiOff className="w-3 h-3 text-amber-400" />
-                  <span>Offline Airgap</span>
-                </>
+                <WifiOff className="w-3 h-3 text-amber-400 stroke-[1.75]" />
               )}
-            </Badge>
+              <span className={`text-[10px] font-mono ${isEffectivelyOnline ? 'text-emerald-400' : 'text-amber-400'}`}>
+                {isEffectivelyOnline ? 'Online' : 'Airgap'}
+              </span>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-slate-400">AI Engine</span>
-            <span className="font-mono text-cyan-400 text-[11px] truncate max-w-[110px]" title={selectedModel}>
+          <div className="flex items-center justify-between text-[11px]">
+            <span className="text-[#687180]">Model</span>
+            <span className="font-mono text-[#77D9E8] text-[10px] truncate max-w-[110px]" title={selectedModel}>
               {selectedModel}
             </span>
           </div>
 
-          <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-800/60">
-            <span className="text-slate-400">Backend API</span>
-            <div className="flex items-center gap-1.5">
-              <span className={`w-2 h-2 rounded-full ${backendStatus.status === 'connected' ? 'bg-emerald-400' : 'bg-cyan-400 animate-pulse'}`} />
-              <span className="text-[11px] text-slate-300">
-                {backendStatus.status === 'connected' ? 'Connected' : 'Simulated'}
-              </span>
-            </div>
+          <div className="flex items-center justify-between text-[11px] pt-1 border-t border-white/[0.04]">
+            <span className="text-[#687180]">Backend</span>
+            <span className="text-[10px] text-[#929AA8] flex items-center gap-1.5">
+              <span className={`w-1.5 h-1.5 rounded-full ${backendStatus.status === 'connected' ? 'bg-emerald-400' : 'bg-[#77D9E8]'}`} />
+              {backendStatus.status === 'connected' ? 'Live' : 'Simulated'}
+            </span>
           </div>
         </div>
 
-        <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400 px-1 font-mono">
-          <span>FORGE v0.9.2</span>
-          <span>Bhuvan &bull; Vansh</span>
+        {/* Operator Profile */}
+        <div className="flex items-center gap-2.5 px-2 py-1 text-xs">
+          <div className="w-6 h-6 rounded-md bg-[#162030] border border-[#77D9E8]/30 flex items-center justify-center text-[10px] font-mono font-semibold text-[#77D9E8]">
+            V
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-[11px] font-medium text-[#F1F3F5] leading-tight truncate">Vansh</div>
+            <div className="text-[10px] text-[#687180] leading-tight truncate">Frontend Lead</div>
+          </div>
         </div>
       </div>
     </aside>

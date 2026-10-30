@@ -1,49 +1,54 @@
 import React from 'react';
-import { Info } from 'lucide-react';
+import { Info, Database, Workflow, ShieldCheck } from 'lucide-react';
 
 export function MemoryExplanationBanner() {
   return (
-    <div className="rounded-2xl bg-gradient-to-r from-blue-950/40 via-cyan-950/20 to-slate-900 border border-cyan-800/40 p-5 mb-6 text-xs shadow-lg shadow-cyan-950/10">
-      <div className="flex items-start gap-3.5">
-        <div className="p-2.5 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 shrink-0">
-          <Info className="w-5 h-5" />
+    <div className="rounded-xl bg-[#10141D] border border-white/[0.06] p-4 text-xs space-y-3">
+      <div className="flex items-center justify-between pb-2 border-b border-white/[0.04]">
+        <div className="flex items-center gap-2">
+          <Info className="w-3.5 h-3.5 text-[#77D9E8] stroke-[1.75]" />
+          <h3 className="text-xs font-semibold text-[#F1F3F5] tracking-tight">
+            Memory Architecture: In-Context Procedural Retrieval
+          </h3>
         </div>
-        <div className="space-y-2 leading-relaxed">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-slate-100">
-              Architectural Clarification: How FORGE Memory Operates
-            </h3>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-              In-Context Retrieval
-            </span>
-          </div>
+        <span className="text-[10px] font-mono text-[#929AA8] bg-white/[0.03] px-2 py-0.5 rounded border border-white/[0.05]">
+          Deterministic Execution
+        </span>
+      </div>
 
-          <p className="text-slate-300">
-            FORGE AI uses an <strong>in-context procedural retrieval memory architecture</strong> rather than fine-tuning or altering local model weights. Understanding this distinction is essential for deterministic system safety:
+      <p className="text-[11px] text-[#929AA8] leading-relaxed">
+        FORGE AI utilizes dynamic in-context retrieval rather than modifying local LLM neural network weights. Understanding this distinction ensures predictable and verifiable automation:
+      </p>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-1">
+        <div className="p-3 rounded-lg bg-black/30 border border-white/[0.04] space-y-1">
+          <div className="flex items-center gap-1.5 text-[11px] font-medium text-[#F1F3F5]">
+            <Database className="w-3 h-3 text-[#77D9E8] stroke-[1.75]" />
+            <span>SQLite Execution Log</span>
+          </div>
+          <p className="text-[11px] text-[#687180] leading-normal">
+            Authoritative chronological history of past tool arguments, outputs, and verification hashes.
           </p>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
-            <div className="p-2.5 rounded-lg bg-black/40 border border-slate-800">
-              <span className="font-semibold text-cyan-400 block mb-0.5">1. SQLite Task History</span>
-              <p className="text-[11px] text-slate-400">
-                Authoritative chronological audit log of past prompts, tool parameters, durations, and output files.
-              </p>
-            </div>
-
-            <div className="p-2.5 rounded-lg bg-black/40 border border-slate-800">
-              <span className="font-semibold text-emerald-400 block mb-0.5">2. Experience Patterns</span>
-              <p className="text-[11px] text-slate-400">
-                Validated workflow templates injected into future prompts to reproduce successful multi-step automation without trial-and-error.
-              </p>
-            </div>
-
-            <div className="p-2.5 rounded-lg bg-black/40 border border-slate-800">
-              <span className="font-semibold text-amber-400 block mb-0.5">3. Frozen Model Weights</span>
-              <p className="text-[11px] text-slate-400">
-                Local Ollama weights remain completely unchanged. Saving execution history never modifies the underlying neural network.
-              </p>
-            </div>
+        <div className="p-3 rounded-lg bg-black/30 border border-white/[0.04] space-y-1">
+          <div className="flex items-center gap-1.5 text-[11px] font-medium text-[#F1F3F5]">
+            <Workflow className="w-3 h-3 text-emerald-400 stroke-[1.75]" />
+            <span>Experience Templates</span>
           </div>
+          <p className="text-[11px] text-[#687180] leading-normal">
+            Validated procedural workflows injected into future prompts to reproduce successful multi-step actions.
+          </p>
+        </div>
+
+        <div className="p-3 rounded-lg bg-black/30 border border-white/[0.04] space-y-1">
+          <div className="flex items-center gap-1.5 text-[11px] font-medium text-[#F1F3F5]">
+            <ShieldCheck className="w-3 h-3 text-amber-400 stroke-[1.75]" />
+            <span>Frozen Model Weights</span>
+          </div>
+          <p className="text-[11px] text-[#687180] leading-normal">
+            Local Ollama model parameters remain strictly read-only. Saving tasks never modifies neural weights.
+          </p>
         </div>
       </div>
     </div>

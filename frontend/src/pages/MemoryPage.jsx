@@ -30,7 +30,7 @@ export function MemoryPage() {
     try {
       await memoryService.deleteRecord(recordToDelete.id);
       setRecords(prev => prev.filter(r => r.id !== recordToDelete.id));
-      setDeleteStatus(`Removed pattern '${recordToDelete.patternName}' successfully.`);
+      setDeleteStatus(`Pattern '${recordToDelete.patternName}' removed from memory store.`);
       setTimeout(() => setDeleteStatus(null), 3000);
     } catch (err) {
       console.error('Failed to delete pattern:', err);
@@ -40,29 +40,29 @@ export function MemoryPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Educational Architecture Banner */}
+    <div className="max-w-6xl mx-auto space-y-4 text-xs">
+      {/* Educational Architecture Specification */}
       <MemoryExplanationBanner />
 
-      {/* Header & Filter Controls */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-xl bg-[#0F1626] border border-slate-800/80">
+      {/* Filter and Search Bar */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-2.5 rounded-xl bg-[#10141D] border border-white/[0.06]">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-3.5 h-3.5 text-[#687180] absolute left-3 top-1/2 -translate-y-1/2 stroke-[1.75]" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search experience patterns by name, trigger phrase, or description..."
-            className="w-full bg-slate-900/80 border border-slate-800 rounded-lg pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-400 focus:outline-none focus:border-cyan-500/50"
+            placeholder="Search experience patterns by name, trigger phrase, or procedure..."
+            className="w-full bg-white/[0.03] border border-white/[0.06] rounded-lg pl-8 pr-3 py-1.5 text-xs text-[#F1F3F5] placeholder-[#687180] focus:outline-none focus:border-[#77D9E8]/40"
           />
         </div>
 
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value)}
-          className="bg-slate-900/80 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-cyan-500/50"
+          className="bg-white/[0.03] border border-white/[0.06] rounded-lg px-2.5 py-1.5 text-xs text-[#929AA8] focus:outline-none focus:border-[#77D9E8]/40 cursor-pointer"
         >
-          <option value="all">All Categories</option>
+          <option value="all">All Domains</option>
           <option value="excel">Excel Automation</option>
           <option value="file system">File System Operations</option>
           <option value="document">Document Parsing</option>
@@ -71,15 +71,15 @@ export function MemoryPage() {
 
       {/* Notification Toast */}
       {deleteStatus && (
-        <div className="p-3 rounded-xl bg-cyan-950/30 border border-cyan-800/40 text-xs text-cyan-300 flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
+        <div className="p-2.5 rounded-lg bg-[#77D9E8]/10 border border-[#77D9E8]/20 text-[11px] text-[#77D9E8] flex items-center gap-2">
+          <Sparkles className="w-3.5 h-3.5 shrink-0" />
           <span>{deleteStatus}</span>
         </div>
       )}
 
-      {/* Experience Patterns Grid */}
+      {/* Patterns Grid */}
       {records.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
           {records.map((rec) => (
             <ExperienceCard
               key={rec.id}
@@ -89,11 +89,11 @@ export function MemoryPage() {
           ))}
         </div>
       ) : (
-        <div className="p-12 text-center rounded-2xl bg-[#0F1626] border border-slate-800/80">
-          <Cpu className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-          <h4 className="text-sm font-semibold text-slate-300">No Experience Patterns Found</h4>
-          <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-            Try adjusting your search query or run automated tasks in the Workspace to index new procedural patterns.
+        <div className="p-10 text-center rounded-xl bg-[#10141D] border border-white/[0.06]">
+          <Cpu className="w-8 h-8 text-[#687180] mx-auto mb-2 stroke-[1.5]" />
+          <h4 className="text-xs font-semibold text-[#F1F3F5]">No Experience Patterns Found</h4>
+          <p className="text-[11px] text-[#687180] mt-1 max-w-sm mx-auto">
+            Try adjusting search terms or execute automated tasks in the workspace to index new procedural patterns.
           </p>
         </div>
       )}
@@ -106,12 +106,12 @@ export function MemoryPage() {
           title="Delete Experience Pattern"
           maxWidth="max-w-md"
         >
-          <div className="space-y-4">
-            <p className="text-xs text-slate-300 leading-relaxed">
-              Are you sure you want to delete the pattern <strong>"{recordToDelete.patternName}"</strong>? This will remove its procedural templates and trigger phrases from future prompt augmentation.
+          <div className="space-y-4 text-xs">
+            <p className="text-[#929AA8] leading-relaxed">
+              Are you sure you want to remove <strong>"{recordToDelete.patternName}"</strong> from the memory index? This procedural recipe will no longer be retrieved during automated planning.
             </p>
 
-            <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-2">
+            <div className="pt-3 border-t border-white/[0.06] flex items-center justify-end gap-2">
               <Button
                 variant="secondary"
                 size="sm"
@@ -125,7 +125,7 @@ export function MemoryPage() {
                 icon={Trash2}
                 onClick={confirmDelete}
               >
-                Confirm Delete
+                Delete Pattern
               </Button>
             </div>
           </div>

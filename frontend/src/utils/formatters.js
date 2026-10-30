@@ -23,7 +23,7 @@ export function formatRelativeTime(timestamp) {
   const now = new Date();
   const diffInSeconds = Math.floor((now - date) / 1000);
 
-  if (diffInSeconds < 60) return 'Just now';
+  if (diffInSeconds < 60) return 'just now';
   if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}m ago`;
   if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}h ago`;
   return `${Math.floor(diffInSeconds / 86400)}d ago`;
@@ -53,35 +53,35 @@ export function getStatusStyle(status) {
     case 'success':
       return {
         bg: 'bg-emerald-500/10',
-        text: 'text-emerald-400',
-        border: 'border-emerald-500/30',
+        text: 'text-emerald-300',
+        border: 'border-emerald-500/20',
         dot: 'bg-emerald-400',
         label: 'Completed'
       };
     case 'executing':
     case 'running':
       return {
-        bg: 'bg-cyan-500/10',
-        text: 'text-cyan-400',
-        border: 'border-cyan-500/30',
-        dot: 'bg-cyan-400 animate-ping',
+        bg: 'bg-[#77D9E8]/10',
+        text: 'text-[#77D9E8]',
+        border: 'border-[#77D9E8]/25',
+        dot: 'bg-[#77D9E8] animate-pulse',
         label: 'Executing'
       };
     case 'waiting_approval':
     case 'approval_needed':
       return {
         bg: 'bg-amber-500/10',
-        text: 'text-amber-400',
-        border: 'border-amber-500/30',
+        text: 'text-amber-300',
+        border: 'border-amber-500/25',
         dot: 'bg-amber-400',
-        label: 'Action Required'
+        label: 'Approval Gate'
       };
     case 'planning':
     case 'understanding':
       return {
         bg: 'bg-blue-500/10',
-        text: 'text-blue-400',
-        border: 'border-blue-500/30',
+        text: 'text-blue-300',
+        border: 'border-blue-500/20',
         dot: 'bg-blue-400',
         label: 'Planning'
       };
@@ -89,16 +89,16 @@ export function getStatusStyle(status) {
     case 'rejected':
       return {
         bg: 'bg-rose-500/10',
-        text: 'text-rose-400',
-        border: 'border-rose-500/30',
+        text: 'text-rose-300',
+        border: 'border-rose-500/20',
         dot: 'bg-rose-400',
-        label: status === 'rejected' ? 'Rejected' : 'Failed'
+        label: status === 'rejected' ? 'Denied' : 'Failed'
       };
     default:
       return {
-        bg: 'bg-slate-700/30',
+        bg: 'bg-white/[0.04]',
         text: 'text-slate-400',
-        border: 'border-slate-700/50',
+        border: 'border-white/[0.06]',
         dot: 'bg-slate-500',
         label: 'Idle'
       };

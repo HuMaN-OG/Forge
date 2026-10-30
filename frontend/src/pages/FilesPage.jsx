@@ -31,40 +31,31 @@ export function FilesPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header Summary */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-[#0F1626] border border-slate-800/80">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/25 text-cyan-400">
-            <FolderArchive className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-base font-semibold text-slate-100">
-              Generated Artifacts & Documents
-            </h2>
-            <p className="text-xs text-slate-400">
-              Workbooks, documents, and logs produced by FORGE Python automation tools
-            </p>
-          </div>
+    <div className="max-w-6xl mx-auto space-y-4 text-xs">
+      {/* Header Info */}
+      <div className="flex items-center justify-between px-1">
+        <div>
+          <h2 className="text-sm font-semibold text-[#F1F3F5] tracking-tight">Generated Artifacts & Output Documents</h2>
+          <p className="text-[11px] text-[#687180]">Workbooks, manifests, and data extracted by FORGE automation tools</p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-slate-400 bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-800">
-          <HardDrive className="w-3.5 h-3.5 text-cyan-400" />
-          <span>Files Tracked: {files.length}</span>
+        <div className="flex items-center gap-1.5 font-mono text-[11px] text-[#929AA8] bg-white/[0.03] px-2.5 py-1 rounded-md border border-white/[0.06]">
+          <HardDrive className="w-3 h-3 text-[#77D9E8] stroke-[1.75]" />
+          <span>{files.length} Files Recorded</span>
         </div>
       </div>
 
-      {/* Download / Notice Banner */}
+      {/* Download Feedback Notice */}
       {downloadNotice && (
-        <div className="p-4 rounded-xl bg-cyan-950/40 border border-cyan-800/50 text-xs text-cyan-200 flex items-start gap-3">
-          <Info className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5" />
-          <div className="flex-1 min-w-0">
-            <span className="font-semibold block mb-0.5">Filesystem Download Notice</span>
-            <p className="text-slate-300 leading-relaxed font-sans">{downloadNotice.message}</p>
+        <div className="p-3 rounded-lg bg-[#77D9E8]/10 border border-[#77D9E8]/20 text-[11px] text-[#77D9E8] flex items-start gap-2.5">
+          <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <span className="font-semibold block">Filesystem Notice:</span>
+            <p className="text-[#D1D5DB] leading-relaxed mt-0.5">{downloadNotice.message}</p>
           </div>
           <button
             onClick={() => setDownloadNotice(null)}
-            className="text-cyan-400 hover:text-cyan-200 font-bold ml-2 text-sm"
+            className="text-[#929AA8] hover:text-[#F1F3F5] text-sm"
           >
             &times;
           </button>
@@ -72,25 +63,25 @@ export function FilesPage() {
       )}
 
       {/* Filter and Search Bar */}
-      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-4 rounded-xl bg-[#0F1626] border border-slate-800/80">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-2.5 rounded-xl bg-[#10141D] border border-white/[0.06]">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-3.5 h-3.5 text-[#687180] absolute left-3 top-1/2 -translate-y-1/2 stroke-[1.75]" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search generated artifacts by file name or description..."
-            className="w-full bg-slate-900/80 border border-slate-800 rounded-lg pl-9 pr-4 py-2 text-xs text-slate-200 placeholder-slate-400 focus:outline-none focus:border-cyan-500/50"
+            placeholder="Search artifacts by file name or description..."
+            className="w-full bg-white/[0.03] border border-white/[0.06] rounded-lg pl-8 pr-3 py-1.5 text-xs text-[#F1F3F5] placeholder-[#687180] focus:outline-none focus:border-[#77D9E8]/40"
           />
         </div>
 
         <select
           value={extension}
           onChange={(e) => setExtension(e.target.value)}
-          className="bg-slate-900/80 border border-slate-800 rounded-lg px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-cyan-500/50"
+          className="bg-white/[0.03] border border-white/[0.06] rounded-lg px-2.5 py-1.5 text-xs text-[#929AA8] focus:outline-none focus:border-[#77D9E8]/40 cursor-pointer"
         >
-          <option value="all">All File Types</option>
-          <option value="xlsx">Excel Workbooks (.xlsx)</option>
+          <option value="all">All File Formats</option>
+          <option value="xlsx">Excel Spreadsheets (.xlsx)</option>
           <option value="json">Data Manifests (.json)</option>
           <option value="pdf">PDF Documents (.pdf)</option>
           <option value="csv">CSV Tables (.csv)</option>
@@ -99,7 +90,7 @@ export function FilesPage() {
 
       {/* Files Grid */}
       {files.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {files.map((file) => (
             <FileCard
               key={file.id}
@@ -110,11 +101,11 @@ export function FilesPage() {
           ))}
         </div>
       ) : (
-        <div className="p-12 text-center rounded-2xl bg-[#0F1626] border border-slate-800/80">
-          <FolderArchive className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-          <h4 className="text-sm font-semibold text-slate-300">No Generated Files Recorded</h4>
-          <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
-            When you run tasks that generate spreadsheets or reports, they will be registered and displayed here.
+        <div className="p-10 text-center rounded-xl bg-[#10141D] border border-white/[0.06]">
+          <FolderArchive className="w-8 h-8 text-[#687180] mx-auto mb-2 stroke-[1.5]" />
+          <h4 className="text-xs font-semibold text-[#F1F3F5]">No Generated Files Recorded</h4>
+          <p className="text-[11px] text-[#687180] mt-1 max-w-sm mx-auto">
+            Artifacts produced during automated tool runs will be cataloged and accessible here.
           </p>
         </div>
       )}
@@ -124,36 +115,37 @@ export function FilesPage() {
         <Modal
           isOpen={!!activeModalFile}
           onClose={() => setActiveModalFile(null)}
-          title="Generated Artifact Inspection"
+          title="Generated Artifact Specification"
+          subtitle={activeModalFile.name}
           maxWidth="max-w-lg"
         >
-          <div className="space-y-4 text-xs">
-            <div className="p-3.5 rounded-xl bg-slate-900 border border-slate-800 space-y-2">
+          <div className="space-y-3.5 text-xs">
+            <div className="p-3 rounded-lg bg-black/40 border border-white/[0.05] space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="font-semibold text-slate-100 text-sm">{activeModalFile.name}</span>
-                <span className="font-mono text-cyan-400 text-[11px]">{formatFileSize(activeModalFile.sizeBytes)}</span>
+                <span className="font-semibold text-[#F1F3F5]">{activeModalFile.name}</span>
+                <span className="font-mono text-[#77D9E8] text-[11px]">{formatFileSize(activeModalFile.sizeBytes)}</span>
               </div>
-              <p className="text-slate-400 leading-relaxed">{activeModalFile.description}</p>
+              <p className="text-[11px] text-[#929AA8] leading-relaxed">{activeModalFile.description}</p>
             </div>
 
-            <div className="space-y-2">
-              <div className="p-2.5 rounded-lg bg-black/40 border border-slate-800">
-                <span className="font-bold text-slate-400 block text-[10px] uppercase">Filesystem Location</span>
-                <span className="font-mono text-cyan-300 text-[11px] break-all">{activeModalFile.path}</span>
+            <div className="space-y-2 text-[11px]">
+              <div className="p-2.5 rounded bg-black/20 border border-white/[0.04]">
+                <span className="font-mono text-[10px] text-[#687180] uppercase block">Absolute Disk Location</span>
+                <span className="font-mono text-[#77D9E8] break-all">{activeModalFile.path}</span>
               </div>
 
-              <div className="p-2.5 rounded-lg bg-black/40 border border-slate-800">
-                <span className="font-bold text-slate-400 block text-[10px] uppercase">Associated Task</span>
-                <span className="text-slate-200">{activeModalFile.taskTitle}</span>
+              <div className="p-2.5 rounded bg-black/20 border border-white/[0.04]">
+                <span className="font-mono text-[10px] text-[#687180] uppercase block">Originating Task</span>
+                <span className="text-[#E2E8F0]">{activeModalFile.taskTitle}</span>
               </div>
 
-              <div className="p-2.5 rounded-lg bg-black/40 border border-slate-800">
-                <span className="font-bold text-slate-400 block text-[10px] uppercase">Generation Date</span>
-                <span className="text-slate-200">{formatDate(activeModalFile.createdAt)}</span>
+              <div className="p-2.5 rounded bg-black/20 border border-white/[0.04]">
+                <span className="font-mono text-[10px] text-[#687180] uppercase block">Recorded Timestamp</span>
+                <span className="text-[#E2E8F0]">{formatDate(activeModalFile.createdAt)}</span>
               </div>
             </div>
 
-            <div className="pt-3 border-t border-slate-800 flex items-center justify-end gap-2">
+            <div className="pt-3 border-t border-white/[0.06] flex items-center justify-end gap-2">
               <Button variant="secondary" size="sm" onClick={() => setActiveModalFile(null)}>
                 Close
               </Button>

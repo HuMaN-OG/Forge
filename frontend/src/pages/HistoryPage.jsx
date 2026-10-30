@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { History, Database } from 'lucide-react';
+import { Database } from 'lucide-react';
 import { useTasks } from '../context/TaskContext';
 import { TaskFilterBar } from '../components/history/TaskFilterBar';
 import { TaskHistoryTable } from '../components/history/TaskHistoryTable';
@@ -44,26 +44,17 @@ export function HistoryPage() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6">
-      {/* Header Info */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 rounded-2xl bg-[#0F1626] border border-slate-800/80">
-        <div className="flex items-center gap-3">
-          <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/25 text-cyan-400">
-            <History className="w-5 h-5" />
-          </div>
-          <div>
-            <h2 className="text-base font-semibold text-slate-100">
-              Task Execution History & Metrics
-            </h2>
-            <p className="text-xs text-slate-400">
-              Complete chronological audit trail stored authoritatively in SQLite
-            </p>
-          </div>
+    <div className="max-w-6xl mx-auto space-y-4">
+      {/* Header Info Bar */}
+      <div className="flex items-center justify-between px-1 text-xs">
+        <div>
+          <h2 className="text-sm font-semibold text-[#F1F3F5] tracking-tight">Audit Trail & Task History</h2>
+          <p className="text-[11px] text-[#687180]">Authoritative chronological log from backend SQLite store</p>
         </div>
 
-        <div className="flex items-center gap-2 text-xs font-mono text-slate-400 bg-slate-900/60 px-3 py-1.5 rounded-lg border border-slate-800">
-          <Database className="w-3.5 h-3.5 text-cyan-400" />
-          <span>Total Records: {tasks.length}</span>
+        <div className="flex items-center gap-1.5 font-mono text-[11px] text-[#929AA8] bg-white/[0.03] px-2.5 py-1 rounded-md border border-white/[0.06]">
+          <Database className="w-3 h-3 text-[#77D9E8] stroke-[1.75]" />
+          <span>{tasks.length} Records</span>
         </div>
       </div>
 
@@ -78,14 +69,14 @@ export function HistoryPage() {
         onReset={handleResetFilters}
       />
 
-      {/* Tasks Table */}
+      {/* Audit Table */}
       <TaskHistoryTable
         tasks={filteredTasks}
         onSelectTask={setSelectedTask}
         onReuseTask={handleReuse}
       />
 
-      {/* Task Details Modal */}
+      {/* Detail Modal */}
       {selectedTask && (
         <TaskDetailModal
           task={selectedTask}

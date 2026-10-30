@@ -1,79 +1,91 @@
 @import "tailwindcss";
 
 :root {
-  --bg-deep: #080C14;
-  --bg-primary: #0D131F;
-  --bg-surface: #141B2D;
-  --bg-surface-hover: #1A233A;
-  --bg-card: #111827;
-  --border-subtle: #1F293D;
-  --border-strong: #2D3A54;
-  --accent-cyan: #00F0FF;
-  --accent-blue: #0EA5E9;
-  --accent-emerald: #10B981;
-  --accent-amber: #F59E0B;
-  --accent-rose: #F43F5E;
+  --bg-base: #090B10;
+  --bg-subtle: #0C0E14;
+  --bg-surface: #121620;
+  --bg-surface-elevated: #161B26;
+  --bg-glass: rgba(255, 255, 255, 0.03);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --border-regular: rgba(255, 255, 255, 0.075);
+  --border-focus: rgba(119, 217, 232, 0.35);
+  --text-primary: #F1F3F5;
+  --text-secondary: #929AA8;
+  --text-muted: #687180;
+  --accent-cyan: #77D9E8;
+  --accent-blue: #6EA8FF;
+  --accent-muted: rgba(119, 217, 232, 0.12);
+  --success: #34D399;
+  --warning: #FBBF24;
+  --danger: #F87171;
 }
 
 body {
-  background-color: var(--bg-deep);
-  color: #F3F4F6;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", "Helvetica Neue", Arial, sans-serif;
-  min-height: 100vh;
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, "Geist", "Inter", "Segoe UI", Roboto, sans-serif;
+  letter-spacing: -0.011em;
   margin: 0;
   padding: 0;
+  min-height: 100vh;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Custom sleek scrollbar */
+/* Minimalist macOS-style scrollbars */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(13, 19, 31, 0.6);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #2D3A54;
+  background: rgba(255, 255, 255, 0.12);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #00F0FF88;
+  background: rgba(255, 255, 255, 0.22);
 }
 
-/* Pulse glow for running tasks */
-@keyframes cyan-pulse {
-  0%, 100% {
-    box-shadow: 0 0 12px rgba(0, 240, 255, 0.2);
-  }
-  50% {
-    box-shadow: 0 0 20px rgba(0, 240, 255, 0.45);
-  }
+/* Selective, Controlled Glassmorphism */
+.forge-glass-floating {
+  background: rgba(14, 18, 26, 0.78);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.02);
 }
 
-.glow-cyan-pulse {
-  animation: cyan-pulse 2.5s infinite ease-in-out;
+.forge-glass-dock {
+  background: rgba(12, 15, 22, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
 }
 
-/* Glassmorphism subtle surface */
-.glass-panel {
-  background: rgba(17, 24, 39, 0.75);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(45, 58, 84, 0.6);
+.forge-surface {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
 }
 
-.glass-card {
-  background: rgba(20, 27, 45, 0.6);
-  backdrop-filter: blur(8px);
-  border: 1px solid rgba(45, 58, 84, 0.5);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+.forge-surface-elevated {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-regular);
 }
 
-.glass-card:hover {
-  border-color: rgba(0, 240, 255, 0.4);
-  background: rgba(26, 35, 58, 0.8);
+/* Restrained subtle focus ring */
+.forge-input-focus:focus-within {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 1px rgba(119, 217, 232, 0.2), 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Code & monospace typography */
+.font-mono {
+  font-family: "Geist Mono", "JetBrains Mono", "SF Mono", Consolas, Menlo, Monaco, monospace;
 }

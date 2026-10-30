@@ -30,7 +30,8 @@ UNDERSTAND  ──▶  PLAN  ──▶  APPROVE  ──▶  EXECUTE  ──▶  
 - **Styling**: [Tailwind CSS v4](https://tailwindcss.com/) with `@tailwindcss/vite`
 - **Routing**: [React Router v7](https://reactrouter.com/) (Browser client routing)
 - **Icons**: [Lucide React](https://lucide.dev/)
-- **Design Tokens**: Dark charcoal/near-black theme (`#080C14`, `#0D131F`, `#0F1626`) with electric cyan (`#00F0FF`) and sky blue (`#0EA5E9`) accents.
+- **Design Tokens**: Linear & Raycast inspired deep graphite palette (`#090B10`, `#0C0E14`, `#10141D`) with subtle ice cyan (`#77D9E8`) and atmospheric blue (`#6EA8FF`) accents, selective glassmorphism, and precision monospace typography.
+- **Brand Identity**: Original custom geometric SVG mark representing structured computational intelligence and deterministic anvil execution.
 
 ---
 
@@ -39,13 +40,13 @@ UNDERSTAND  ──▶  PLAN  ──▶  APPROVE  ──▶  EXECUTE  ──▶  
 ```text
 frontend/
 ├── public/
-│   └── favicon.svg             # Autonomous bot SVG icon
+│   └── favicon.svg             # Custom geometric FORGE brand mark SVG
 ├── src/
 │   ├── assets/                 # Static images and icons
 │   ├── components/
 │   │   ├── chat/               # ChatMessage, SuggestedTasks, PlanApprovalCard, TaskProgressTimeline, MessageComposer
-│   │   ├── common/             # Badge, Button, Card, Modal, StatusIndicator
-│   │   ├── dashboard/          # SystemStatusBar, Quick telemetry indicators
+│   │   ├── common/             # ForgeLogo, Badge, Button, Card, Modal, StatusIndicator
+│   │   ├── dashboard/          # SystemStatusBar, Environment telemetry
 │   │   ├── files/              # FileCard, FileFilterBar
 │   │   ├── history/            # TaskHistoryTable, TaskFilterBar, TaskDetailModal
 │   │   ├── memory/             # MemoryExplanationBanner, ExperienceCard
