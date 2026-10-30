@@ -1,5 +1,12 @@
 const path = require('node:path');
-require('dotenv').config();
+const dotenv = require('dotenv');
+
+// Load environment variables from backend/.env or workspace root .env
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
+const backendDir = path.resolve(__dirname, '..');
+const rootDir = path.resolve(backendDir, '..');
 
 const config = {
   port: parseInt(process.env.PORT || '3000', 10),
@@ -20,11 +27,13 @@ const config = {
   },
 
   workspace: {
-    path: path.resolve(process.env.WORKSPACE_DIR || path.join(__dirname, '../../workspace_sandbox'))
+    path: path.resolve(process.env.WORKSPACE_DIR || path.join(rootDir, 'workspace_sandbox'))
   },
 
   db: {
-    path: path.resolve(process.cwd(), process.env.SQLITE_DB_PATH || './data/forge.db')
+    path: path.isAbsolute(process.env.SQLITE_DB_PATH || '')
+      ? process.env.SQLITE_DB_PATH
+      : path.resolve(backendDir, process.env.SQLITE_DB_PATH || 'data/forge.db')
   },
 
   cors: {

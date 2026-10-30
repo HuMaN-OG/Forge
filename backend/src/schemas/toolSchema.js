@@ -33,7 +33,7 @@ function isForbiddenTool(toolName) {
 // Milestone-restricted allowed tool actions
 // Initial milestone allows ONLY file_system.list_directory
 const ALLOWED_MILESTONE_ACTIONS = {
-  'file_system': ['list_directory']
+  'file_system': ['list_directory', 'create_file']
 };
 
 const EXTENDED_REGISTERED_ACTIONS = {
@@ -72,7 +72,7 @@ const excelToolParamsSchema = z.object({
 
 // File System Tool Payload Schema
 const fileSystemToolParamsSchema = z.object({
-  action: z.enum(['list_directory', 'read_file', 'write_file', 'move_file', 'organize_by_extension']),
+  action: z.enum(['list_directory', 'read_file', 'write_file', 'create_file', 'move_file', 'organize_by_extension']),
   targetDirectory: z.string(),
   targetFile: z.string().optional(),
   destinationDirectory: z.string().optional(),

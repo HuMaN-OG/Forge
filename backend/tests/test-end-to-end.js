@@ -1,4 +1,5 @@
 // backend/tests/test-end-to-end.js
+process.env.ALLOW_EXTENDED_TOOLS = 'true';
 const assert = require('node:assert');
 const fs = require('node:fs');
 const path = require('node:path');
@@ -6,6 +7,19 @@ const { spawn } = require('node:child_process');
 
 const PYTHON_PATH = 'C:\\Program Files\\Python311\\python.exe';
 const WORKSPACE_DIR = path.resolve(__dirname, '../../workspace_sandbox');
+
+const dotenv = require('dotenv');
+
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
+const AUTH_TOKEN = process.env.FORGE_AUTOMATION_TOKEN;
+
+if (!AUTH_TOKEN) {
+  throw new Error(
+    'FORGE_AUTOMATION_TOKEN must be configured in backend/.env or the root .env file.'
+  );
+}
 
 // Ensure dedicated test workspace exists
 if (!fs.existsSync(WORKSPACE_DIR)) {
@@ -54,22 +68,28 @@ async function runEndToEndTests() {
     // 2. Start Python Automation Service (FastAPI on 127.0.0.1:8000)
     // -------------------------------------------------------------------------
     console.log('\n[2/15] Launching Python FastAPI Automation Service...');
-    const automationSrc = path.resolve(__dirname, '../../automation');
-    pythonProc = spawn(PYTHON_PATH, ['-m', 'uvicorn', 'src.main:app', '--host', '127.0.0.1', '--port', '8000'], {
-      cwd: automationSrc,
-      stdio: 'pipe',
-      env: { ...process.env, WORKSPACE_DIR }
-    });
+    const pyAlreadyOnline = await waitForHttp('http://127.0.0.1:8000/health', 1500);
+    if (pyAlreadyOnline) {
+      console.log('  ✓ Reusing already-running Python Automation service on http://127.0.0.1:8000');
+    } else {
+      const automationSrc = path.resolve(__dirname, '../../automation');
+      pythonProc = spawn(PYTHON_PATH, ['-m', 'uvicorn', 'src.main:app', '--host', '127.0.0.1', '--port', '8000'], {
+        cwd: automationSrc,
+        stdio: 'pipe',
+        env: { ...process.env, WORKSPACE_DIR }
+      });
 
-    pythonProc.stderr.on('data', d => {
-      const msg = d.toString();
-      if (!msg.includes('INFO:') && !msg.includes('Started server process')) {
-        // console.error('[Python]', msg.trim());
-      }
-    });
+      pythonProc.stderr.on('data', d => {
+        const msg = d.toString();
+        if (!msg.includes('INFO:') && !msg.includes('Started server process')) {
+          // console.error('[Python]', msg.trim());
+        }
+      });
 
-    const pyReady = await waitForHttp('http://127.0.0.1:8000/health', 12000);
-    assert.strictEqual(pyReady, true, 'Python FastAPI service must respond on port 8000');
+      const pyReady = await waitForHttp('http://127.0.0.1:8000/health', 12000);
+      assert.strictEqual(pyReady, true, 'Python FastAPI service must respond on port 8000');
+    }
+
     const pyHealthRes = await fetch('http://127.0.0.1:8000/health');
     const pyHealth = await pyHealthRes.json();
     assert.strictEqual(pyHealth.status, 'healthy');
@@ -80,11 +100,16 @@ async function runEndToEndTests() {
     // 3. Start Backend Express Server (127.0.0.1:3000)
     // -------------------------------------------------------------------------
     console.log('\n[3/15] Starting Backend Express Server...');
-    const app = require('../src/app');
-    backendServer = app.listen(3000, '127.0.0.1');
-    const backendReady = await waitForHttp('http://127.0.0.1:3000/health', 8000);
-    assert.strictEqual(backendReady, true, 'Backend must respond on port 3000');
-    console.log('  ✓ Backend online at http://127.0.0.1:3000');
+    const backendAlreadyOnline = await waitForHttp('http://127.0.0.1:3000/health', 1500);
+    if (backendAlreadyOnline) {
+      console.log('  ✓ Reusing already-running Express Backend on http://127.0.0.1:3000');
+    } else {
+      const app = require('../src/app');
+      backendServer = app.listen(3000, '127.0.0.1');
+      const backendReady = await waitForHttp('http://127.0.0.1:3000/health', 8000);
+      assert.strictEqual(backendReady, true, 'Backend must respond on port 3000');
+      console.log('  ✓ Backend online at http://127.0.0.1:3000');
+    }
 
     // -------------------------------------------------------------------------
     // 4. Verify Unified Health & System Telemetry Endpoint
@@ -126,9 +151,9 @@ async function runEndToEndTests() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message: 'Create a note file named audit_log.txt with content: "FORGE AI system verification complete."',
-        conversationId: 'e2e-session-task'
-      })
+  message: 'Create a text file named audit_log.txt in the workspace sandbox root directory. Write exactly this content: FORGE AI system verification complete.',
+  conversationId: `e2e-session-task-${Date.now()}`
+})
     });
     assert.strictEqual(planRes.status, 200);
     const planData = await planRes.json();
@@ -157,11 +182,21 @@ async function runEndToEndTests() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message: 'Create a note file named unwanted.txt with content: "Should not exist"',
-        conversationId: 'e2e-session-reject'
+        message: 'Create a text file named unwanted.txt in the workspace sandbox root directory. Write exactly this content: Should not exist. This is an instruction to create the file.',
+conversationId: `e2e-session-reject-${Date.now()}`
       })
     });
     const rejectPlanData = await rejectPlanRes.json();
+assert.strictEqual(
+  rejectPlanRes.status,
+  200,
+  'Rejection task planning request must return HTTP 200'
+);
+
+assert.ok(
+  rejectPlanData.task && rejectPlanData.task.id,
+  `Expected a planned rejection task. Received: ${JSON.stringify(rejectPlanData)}`
+);
     const rejectTaskId = rejectPlanData.task.id;
 
     const rejectRes = await fetch(`http://127.0.0.1:3000/api/v1/tasks/${rejectTaskId}/reject`, {
@@ -242,11 +277,15 @@ async function runEndToEndTests() {
     };
     const traversalRes = await fetch('http://127.0.0.1:8000/tools/execute', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-FORGE-TOKEN': AUTH_TOKEN
+      },
       body: JSON.stringify(traversalPayload)
     });
     const traversalData = await traversalRes.json();
     assert.strictEqual(traversalData.success, false);
+    console.log('Traversal HTTP:', traversalRes.status, 'Response:', JSON.stringify(traversalData));
     assert.ok(traversalData.error.includes('travers') || traversalData.error.includes('Access denied'));
     assert.strictEqual(fs.existsSync(path.resolve(__dirname, '../../escaped_sandbox.txt')), false);
     console.log('  ✓ Path traversal attack blocked. File outside sandbox was NOT created.');

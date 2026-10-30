@@ -258,8 +258,46 @@ const messageRepository = {
     }));
   }
 };
+const intentLogRepository = {
+  create(log) {
+    const db = getDatabase();
+    const id = `intent-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`;
+    const now = new Date().toISOString();
+
+    const stmt = db.prepare(`
+      INSERT INTO intent_logs (
+        id,
+        prompt,
+        intent,
+        confidence,
+        reasoning,
+        requires_clarification,
+        clarification_question,
+        created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    stmt.run(
+      id,
+      log.prompt,
+      log.intent,
+      log.confidence,
+      log.reasoning || null,
+      log.requiresClarification ? 1 : 0,
+      log.clarificationQuestion || null,
+      now
+    );
+
+    return {
+      id,
+      ...log,
+      createdAt: now
+    };
+  }
+};
 
 module.exports = {
   taskRepository,
-  messageRepository
+  messageRepository,
+  intentLogRepository
 };
