@@ -9,16 +9,16 @@ export function ChatMessage({ message }) {
 
   if (isSystem) {
     return (
-      <div className="flex justify-start my-3">
-        <div className={`flex items-start gap-2.5 px-3.5 py-2 rounded-lg text-xs max-w-xl ${
+      <div className="flex justify-start my-4">
+        <div className={`flex items-start gap-3 px-4 py-3 rounded-xl text-xs max-w-xl ${
           message.isError 
-            ? 'bg-rose-500/10 border border-rose-500/20 text-rose-300' 
-            : 'bg-white/[0.03] border border-white/[0.06] text-[#929AA8]'
+            ? 'bg-rose-500/10 border border-rose-500/25 text-rose-300' 
+            : 'bg-white/[0.03] border border-white/[0.08] text-[#A1A1AA]'
         }`}>
           {message.isError ? (
-            <AlertCircle className="w-3.5 h-3.5 text-rose-400 shrink-0 mt-0.5" />
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5 stroke-[1.8]" />
           ) : (
-            <Shield className="w-3.5 h-3.5 text-[#77D9E8] shrink-0 mt-0.5" />
+            <Shield className="w-4 h-4 text-sky-400 shrink-0 mt-0.5 stroke-[1.8]" />
           )}
           <span className="leading-relaxed">{message.text}</span>
         </div>
@@ -27,34 +27,34 @@ export function ChatMessage({ message }) {
   }
 
   return (
-    <div className={`flex gap-3 my-4 group ${isUser ? 'justify-end' : 'justify-start'}`}>
+    <div className={`flex gap-3.5 my-5 group ${isUser ? 'justify-end' : 'justify-start'}`}>
       {!isUser && (
-        <div className="w-7 h-7 rounded-lg bg-[#121622] border border-white/[0.08] flex items-center justify-center shrink-0 mt-0.5 shadow-xs">
-          <ForgeLogo size={14} />
+        <div className="w-8 h-8 rounded-xl bg-white/[0.05] border border-white/[0.08] flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
+          <ForgeLogo size={16} />
         </div>
       )}
 
-      <div className={`max-w-2xl rounded-xl p-4 text-xs leading-relaxed ${
+      <div className={`max-w-2xl rounded-2xl p-4 text-[13px] leading-relaxed shadow-sm ${
         isUser
-          ? 'bg-[#141A26] border border-white/[0.08] text-[#F1F3F5] rounded-tr-xs'
-          : 'bg-[#10141D] border border-white/[0.05] text-[#D1D5DB] rounded-tl-xs'
+          ? 'bg-[#181B26] border border-indigo-500/20 text-[#F4F4F5] rounded-tr-xs'
+          : 'bg-[#11131B] border border-white/[0.07] text-[#D4D4D8] rounded-tl-xs'
       }`}>
-        <div className="flex items-center justify-between gap-4 mb-1.5 pb-1 border-b border-white/[0.04]">
-          <span className="text-[10px] font-mono tracking-wider uppercase text-[#687180]">
-            {isUser ? 'Operator' : 'FORGE System'}
+        <div className="flex items-center justify-between gap-4 mb-2 pb-1.5 border-b border-white/[0.05]">
+          <span className="text-[11px] font-medium text-[#71717A]">
+            {isUser ? 'You' : 'Forge Assistant'}
           </span>
-          <span className="text-[10px] text-[#687180] font-mono">
+          <span className="text-[10px] text-[#52525B] font-mono">
             {formatRelativeTime(message.timestamp)}
           </span>
         </div>
 
-        <div className="whitespace-pre-wrap space-y-2 text-xs leading-relaxed text-[#E5E7EB]">
+        <div className="whitespace-pre-wrap space-y-2 text-[#E4E4E7] leading-relaxed">
           {message.text}
         </div>
       </div>
 
       {isUser && (
-        <div className="w-7 h-7 rounded-lg bg-[#162030] border border-[#77D9E8]/30 flex items-center justify-center text-[10px] font-mono font-semibold text-[#77D9E8] shrink-0 mt-0.5">
+        <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-indigo-600 to-sky-500 flex items-center justify-center text-xs font-semibold text-white shrink-0 mt-0.5 shadow-sm">
           V
         </div>
       )}

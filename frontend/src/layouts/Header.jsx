@@ -1,50 +1,54 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { useSystem } from '../context/SystemContext';
+import { ShieldCheck, Cpu } from 'lucide-react';
 
 export function Header() {
   const location = useLocation();
-  const { isEffectivelyOnline, selectedProvider, backendStatus } = useSystem();
+  const { isEffectivelyOnline, selectedProvider, selectedModel, backendStatus } = useSystem();
 
   const getBreadcrumb = () => {
     switch (location.pathname) {
-      case '/': return { section: 'Workspace', title: 'Autonomous Console' };
+      case '/': return { section: 'Studio', title: 'Assistant Workspace' };
       case '/history': return { section: 'Audit', title: 'Task History' };
-      case '/memory': return { section: 'Index', title: 'Memory Store' };
-      case '/files': return { section: 'Filesystem', title: 'Generated Artifacts' };
-      case '/settings': return { section: 'Preferences', title: 'System & Engine' };
-      default: return { section: 'FORGE', title: 'Assistant' };
+      case '/memory': return { section: 'Experience', title: 'Memory & Recipes' };
+      case '/files': return { section: 'Storage', title: 'Generated Files' };
+      case '/settings': return { section: 'Config', title: 'Preferences & Engine' };
+      default: return { section: 'Forge', title: 'Workspace' };
     }
   };
 
   const { section, title } = getBreadcrumb();
 
   return (
-    <header className="h-13 px-6 bg-[#090B10]/80 backdrop-blur-md border-b border-white/[0.05] flex items-center justify-between shrink-0 z-20 text-xs">
+    <header className="h-14 px-8 border-b border-white/[0.05] flex items-center justify-between shrink-0 z-20 text-xs">
       <div className="flex items-center gap-2">
-        <span className="text-[#687180] font-medium">{section}</span>
-        <span className="text-[#687180] font-mono">/</span>
-        <h1 className="font-semibold text-[#F1F3F5] tracking-tight">{title}</h1>
+        <span className="text-[#71717A] font-medium">{section}</span>
+        <span className="text-[#52525B]">/</span>
+        <h1 className="font-semibold text-[#EDEDED]">{title}</h1>
       </div>
 
       <div className="flex items-center gap-3">
         {/* Transparent Mock Mode Pill */}
         {backendStatus.isSimulated && (
-          <div className="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/[0.03] border border-white/[0.07] text-[#929AA8] text-[11px] font-mono">
+          <div className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.06] text-[#A1A1AA] text-[11px]">
             <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
-            <span>Standalone Dev Mode</span>
+            <span>Standalone Dev Preview</span>
           </div>
         )}
 
-        {/* Airgap / Network Status */}
-        <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/[0.03] border border-white/[0.06] text-[11px] text-[#929AA8]">
-          <span className={`w-1.5 h-1.5 rounded-full ${isEffectivelyOnline ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-          <span>{isEffectivelyOnline ? 'Online Permitted' : 'Airgap Enforced'}</span>
+        {/* Engine Target */}
+        <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.06] text-[11px] text-[#D4D4D8]">
+          <Cpu className="w-3.5 h-3.5 text-sky-400 stroke-[1.8]" />
+          <span>{selectedProvider === 'ollama' ? 'Ollama' : 'Groq'}</span>
+          <span className="text-[#52525B]">&bull;</span>
+          <span className="font-mono text-white text-[10px]">{selectedModel}</span>
         </div>
 
-        {/* AI Provider */}
-        <div className="hidden md:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/[0.03] border border-white/[0.06] text-[11px] font-mono text-[#929AA8]">
-          <span className="text-[#77D9E8] font-medium">{selectedProvider === 'ollama' ? 'Ollama' : 'Groq'}</span>
+        {/* Airgap badge */}
+        <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.03] border border-white/[0.06] text-[11px] text-[#A1A1AA]">
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 stroke-[1.8]" />
+          <span>{isEffectivelyOnline ? 'Online Allowed' : 'Airgap Protected'}</span>
         </div>
       </div>
     </header>

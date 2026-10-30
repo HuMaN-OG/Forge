@@ -1,30 +1,15 @@
 @import "tailwindcss";
 
 :root {
-  --bg-base: #090B10;
-  --bg-subtle: #0C0E14;
-  --bg-surface: #121620;
-  --bg-surface-elevated: #161B26;
-  --bg-glass: rgba(255, 255, 255, 0.03);
-  --border-subtle: rgba(255, 255, 255, 0.05);
-  --border-regular: rgba(255, 255, 255, 0.075);
-  --border-focus: rgba(119, 217, 232, 0.35);
-  --text-primary: #F1F3F5;
-  --text-secondary: #929AA8;
-  --text-muted: #687180;
-  --accent-cyan: #77D9E8;
-  --accent-blue: #6EA8FF;
-  --accent-muted: rgba(119, 217, 232, 0.12);
-  --success: #34D399;
-  --warning: #FBBF24;
-  --danger: #F87171;
+  --font-sans: -apple-system, BlinkMacSystemFont, "Inter", "Geist", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
 }
 
 body {
-  background-color: var(--bg-base);
-  color: var(--text-primary);
-  font-family: -apple-system, BlinkMacSystemFont, "Geist", "Inter", "Segoe UI", Roboto, sans-serif;
-  letter-spacing: -0.011em;
+  background-color: #0A0B0E;
+  color: #EDEDED;
+  font-family: var(--font-sans);
+  letter-spacing: -0.012em;
   margin: 0;
   padding: 0;
   min-height: 100vh;
@@ -33,7 +18,39 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Minimalist macOS-style scrollbars */
+/* Subtle atmospheric lighting at top of app */
+.bg-ambient-glow {
+  background: radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99, 102, 241, 0.12), rgba(56, 189, 248, 0.04) 50%, transparent 80%);
+}
+
+/* Sleek macOS-style glass overlay */
+.forge-glass {
+  background: rgba(16, 18, 27, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.forge-glass-floating {
+  background: rgba(18, 20, 30, 0.85);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.forge-card {
+  background: #11131B;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.forge-card:hover {
+  background: #151822;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* Clean minimal scrollbars */
 ::-webkit-scrollbar {
   width: 5px;
   height: 5px;
@@ -44,48 +61,15 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.14);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.26);
 }
 
-/* Selective, Controlled Glassmorphism */
-.forge-glass-floating {
-  background: rgba(14, 18, 26, 0.78);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.09);
-  box-shadow: 0 16px 40px -10px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.02);
-}
-
-.forge-glass-dock {
-  background: rgba(12, 15, 22, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
-}
-
-.forge-surface {
-  background: var(--bg-surface);
-  border: 1px solid var(--border-subtle);
-}
-
-.forge-surface-elevated {
-  background: var(--bg-surface-elevated);
-  border: 1px solid var(--border-regular);
-}
-
-/* Restrained subtle focus ring */
-.forge-input-focus:focus-within {
-  border-color: var(--border-focus);
-  box-shadow: 0 0 0 1px rgba(119, 217, 232, 0.2), 0 4px 16px rgba(0, 0, 0, 0.3);
-}
-
-/* Code & monospace typography */
+/* Monospace fonts */
 .font-mono {
-  font-family: "Geist Mono", "JetBrains Mono", "SF Mono", Consolas, Menlo, Monaco, monospace;
+  font-family: var(--font-mono);
 }

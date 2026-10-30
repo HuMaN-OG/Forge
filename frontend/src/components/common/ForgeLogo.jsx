@@ -73,3 +73,4 @@ export function ForgeLogo({ size = 20, className = '', variant = 'default' }) {
 }
 
 export default ForgeLogo;
+
