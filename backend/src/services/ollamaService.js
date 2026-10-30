@@ -40,7 +40,7 @@ class OllamaService {
   /**
    * Sends a structured chat request to Ollama
    */
-  async chat({ messages, format = 'json', temperature = 0.1, stream = false, numPredict = 200 }) {
+  async chat({ messages, format = 'json', temperature = 0.1, stream = false, numPredict = 400 }) {
     const url = `${this.baseUrl}/api/chat`;
     const body = {
       model: this.model,
@@ -67,8 +67,12 @@ class OllamaService {
     }
 
     const data = await res.json();
+    let content = data.message?.content || '';
+    if (content.includes('</think>')) {
+      content = content.split('</think>').pop().trim();
+    }
     return {
-      content: data.message?.content || '',
+      content,
       thinking: data.message?.thinking || data.thinking || '',
       totalDuration: data.total_duration,
       evalCount: data.eval_count

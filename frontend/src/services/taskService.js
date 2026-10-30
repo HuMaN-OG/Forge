@@ -35,6 +35,58 @@ export const taskService = {
   },
 
   /**
+   * Fetches all persistent conversations from SQLite
+   */
+  async getConversations() {
+    try {
+      const res = await apiClient.get('/api/v1/conversations');
+      return res.conversations || [];
+    } catch (err) {
+      console.warn('[FORGE TaskService] Failed to fetch conversations:', err.message);
+      return [];
+    }
+  },
+
+  /**
+   * Creates a new conversation in SQLite
+   */
+  async createConversation(title = 'New Conversation') {
+    try {
+      const res = await apiClient.post('/api/v1/conversations', { title });
+      return res.conversation;
+    } catch (err) {
+      console.warn('[FORGE TaskService] Failed to create conversation:', err.message);
+      return null;
+    }
+  },
+
+  /**
+   * Deletes a conversation and its messages
+   */
+  async deleteConversation(id) {
+    try {
+      await apiClient.delete(`/api/v1/conversations/${id}`);
+      return true;
+    } catch (err) {
+      console.warn('[FORGE TaskService] Failed to delete conversation:', err.message);
+      return false;
+    }
+  },
+
+  /**
+   * Fetches persistent message history for a conversation from SQLite
+   */
+  async getMessages(conversationId) {
+    try {
+      const res = await apiClient.get(`/api/v1/chat/messages?conversationId=${encodeURIComponent(conversationId)}`);
+      return res.messages || [];
+    } catch (err) {
+      console.warn('[FORGE TaskService] Failed to fetch messages:', err.message);
+      return [];
+    }
+  },
+
+  /**
    * Approves a task for real execution via Express and Python FastAPI
    */
   async approveTask(taskId) {
