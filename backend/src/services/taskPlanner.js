@@ -23,7 +23,9 @@ class TaskPlanner {
     let riskLevel = isOnline ? 'Medium (External Network Access)' : 'Low (Restricted Local Directory Sandbox)';
 
     // PRIORITY 1: Read / View / Inspect / Display existing file
-    if (/read|view|inspect|display|show\s+content|cat\s+/i.test(prompt) && /file|document|content|\.[a-zA-Z0-9]+/i.test(prompt)) {
+    if (/\b(read|view|inspect|display|cat)\b|show\s+contents?/i.test(prompt) &&
+        (/\b(file|document|contents?)\b/i.test(prompt) || /\.[a-zA-Z0-9]+/i.test(prompt)) &&
+        !/\b(create|make|generate|build|write|new)\b/i.test(prompt)) {
       title = 'Read Workspace File';
       plannedTool = REGISTERED_TOOLS.FILE_SYSTEM;
       toolAction = 'read_file';
@@ -38,7 +40,10 @@ class TaskPlanner {
       impactDescription = `Safely read contents of file '${targetFile}' from workspace sandbox and display in chat.`;
 
     // PRIORITY 2: List Workspace Files / Directory
-    } else if (/list|show|browse|what.*files/i.test(prompt) && /files|dir|directory|workspace|folder/i.test(prompt) && !/windows/i.test(prompt)) {
+    } else if (/\b(list|browse)\b|show\s+files|what.*files/i.test(prompt) &&
+               /\b(files|dir|directory|workspace|folder)\b/i.test(prompt) &&
+               !/windows/i.test(prompt) &&
+               !/\b(create|make|generate|build|write|new)\b/i.test(prompt)) {
       title = 'List Workspace Files';
       plannedTool = REGISTERED_TOOLS.FILE_SYSTEM;
       toolAction = 'list_directory';
@@ -98,20 +103,23 @@ class TaskPlanner {
       }
 
     // PRIORITY 4: Excel Spreadsheet Automation
-    } else if (/excel|spreadsheet|xlsx|sheet/i.test(prompt)) {
+    } else if (/\b(excel|spreadsheet|xlsx)\b|\bsheet\b/i.test(prompt)) {
       title = 'Create Structured Excel Workbook';
       plannedTool = REGISTERED_TOOLS.EXCEL_WRITER;
       toolAction = 'create_workbook';
 
       // 1. Extract requested filename
       const fileMatch = prompt.match(/([a-zA-Z0-9_\-]+\.xlsx)/i) ||
-                        prompt.match(/(?:named|name|file)\s+["']?([a-zA-Z0-9_\-]+(?:\.xlsx)?)["']?/i);
+                        prompt.match(/(?:named|name|file|called|as)\s+["']?([a-zA-Z0-9_\-]+(?:\.xlsx)?)["']?/i);
       let filename = fileMatch ? fileMatch[1] : 'workbook.xlsx';
       if (!filename.toLowerCase().endsWith('.xlsx')) filename += '.xlsx';
 
-      // 2. Extract worksheet name, if specified
-      const sheetMatch = prompt.match(/(?:sheet|worksheet|tab)\s*(?:named|name)?\s*[:"']?\s*([a-zA-Z0-9_\-]+)/i);
-      const sheetName = sheetMatch ? sheetMatch[1] : 'Sheet1';
+      // 2. Extract worksheet name, if specified (exclude English prepositions)
+      const sheetMatch = prompt.match(/\b(?:sheet|worksheet|tab)\s*(?:named|name)?\s*[:"']?\s*([a-zA-Z0-9_\-]+)/i);
+      let sheetName = 'Sheet1';
+      if (sheetMatch && !/^(?:for|with|in|to|named|name)$/i.test(sheetMatch[1])) {
+        sheetName = sheetMatch[1];
+      }
 
       // 3. Extract column headers from prompt
       let headers = [];
