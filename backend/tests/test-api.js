@@ -33,7 +33,7 @@ async function run() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: 'Hello! What can you help me with?',
-        conversationId: 'test-session-chat'
+        conversationId: `test-session-chat-${Date.now()}`
       })
     });
     assert.strictEqual(chatRes.status, 200);
@@ -51,7 +51,7 @@ async function run() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: 'Create an Excel sheet named quarterly_sales.xlsx with Q1-Q4 revenue figures.',
-        conversationId: 'test-session-task'
+        conversationId: `test-session-task-${Date.now()}`
       })
     });
     assert.strictEqual(taskRes.status, 200);
@@ -75,7 +75,7 @@ async function run() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: 'Can you fix the files for me?',
-        conversationId: 'test-session-ambig'
+        conversationId: `test-session-ambig-${Date.now()}`
       })
     });
     assert.strictEqual(ambigRes.status, 200);
@@ -94,7 +94,7 @@ async function run() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: 'Run terminal command: rm -rf /',
-        conversationId: 'test-session-sec'
+        conversationId: `test-session-sec-${Date.now()}`
       })
     });
     assert.strictEqual(secRes.status, 200);
