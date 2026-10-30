@@ -209,6 +209,36 @@ class TaskPlanner {
       };
       impactDescription = `Edit existing file '${targetFile}' inside workspace sandbox and verify updates.`;
 
+    // PRIORITY 2.8: Interactive Notepad Authoring (type text & save document)
+    } else if (/\bnotepad\b/i.test(prompt) && (/\b(type|write|enter|put|note)\b/i.test(prompt) || /\b(save|save\s+as)\b/i.test(prompt))) {
+      let text = 'FORGE Automation Note';
+      const textMatch = prompt.match(/(?:type|write|enter|put|note)[:\s]+["']?([^"'\r\n]+?)(?:["']?\s+(?:and\s+)?(?:then\s+)?save|$)/i);
+      if (textMatch) {
+        text = textMatch[1].trim().replace(/\s+(?:in|into)\s+notepad$/i, '').trim();
+      }
+
+      let filename = 'note.txt';
+      const fileMatch = prompt.match(/(?:save(?:\s+it)?\s+as|named|called|filename)\s+["']?([a-zA-Z0-9_\-]+(?:\.[a-zA-Z0-9]+)?)["']?/i);
+      if (fileMatch) {
+        filename = fileMatch[1].trim().replace(/\s+filename$/i, '').trim();
+      } else {
+        const anyFile = prompt.match(/([a-zA-Z0-9_\-]+\.txt)/i);
+        if (anyFile) filename = anyFile[1].trim();
+      }
+      if (!filename.includes('.')) filename += '.txt';
+
+      title = `Notepad Automation: Type & Save (${filename})`;
+      plannedTool = REGISTERED_TOOLS.DESKTOP_CONTROL;
+      toolAction = 'notepad_report';
+      toolParams = {
+        action: 'notepad_report',
+        text,
+        content: text,
+        filename,
+        topic: text
+      };
+      impactDescription = `Launch Notepad on desktop, type '${text}', and save document as '${filename}' inside workspace sandbox.`;
+
     // PRIORITY 3: Application Launching
     } else if (/\b(launch|open)\b\s+(?:approved\s+)?(?:application\s+|app\s+)?(notepad|file\s+explorer|explorer|calc|calculator|word|winword|excel|powerpoint|ppt|chrome|edge|vscode|code)\b/i.test(prompt) &&
                !/\b(create|make|generate|build|write|spreadsheet|workbook)\b/i.test(prompt)) {
@@ -232,7 +262,16 @@ class TaskPlanner {
     } else if (/\bopen\b/i.test(prompt) && (/\.[a-zA-Z0-9]+/i.test(prompt) || /\bin\s+(notepad|word|excel|powerpoint|calc)/i.test(prompt)) &&
                !/\b(create|make|generate|build|write)\b/i.test(prompt)) {
       const match = prompt.match(/([a-zA-Z0-9_\-]+\.[a-zA-Z0-9]+)/i);
-      let filename = match ? match[1] : 'Open_Test.txt';
+      let filename = match ? match[1] : '';
+      if (!filename) {
+        const nameMatch = prompt.match(/(?:file|document|named|called|as)\s+["']?([a-zA-Z0-9_\-]+(?:\.[a-zA-Z0-9]+)?)["']?/i);
+        if (nameMatch) {
+          filename = nameMatch[1].trim().replace(/\s+filename$/i, '').trim();
+          if (!filename.includes('.')) filename += '.txt';
+        } else {
+          filename = 'Open_Test.txt';
+        }
+      }
       title = `Open Document (${filename})`;
       plannedTool = REGISTERED_TOOLS.DESKTOP_CONTROL;
       toolAction = 'open_document_in_app';
@@ -1120,7 +1159,7 @@ class TaskPlanner {
 
 
 
-    } else if (/organize|sort|categorize/i.test(prompt) && /file|folder|dir|extension/i.test(prompt)) {
+    } else if (/\\b(organize|sort|categorize)\\b/i.test(prompt) && /\\b(file|folder|dir|extension)s?\\b/i.test(prompt)) {
 
 
 
@@ -1168,7 +1207,7 @@ class TaskPlanner {
 
 
 
-    } else if (/create|write|make|generate/i.test(prompt) && /file|text|note|document|log/i.test(prompt)) {
+    } else if (/\\b(create|write|make|generate)\\b/i.test(prompt) && /\\b(file|text|note|document|log)s?\\b/i.test(prompt)) {
 
 
 

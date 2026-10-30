@@ -51,6 +51,40 @@ import win32con
 import win32api
 
 import ctypes
+from ctypes import wintypes
+
+
+class STARTUPINFOW(ctypes.Structure):
+    _fields_ = [
+        ('cb', wintypes.DWORD),
+        ('lpReserved', wintypes.LPWSTR),
+        ('lpDesktop', wintypes.LPWSTR),
+        ('lpTitle', wintypes.LPWSTR),
+        ('dwX', wintypes.DWORD),
+        ('dwY', wintypes.DWORD),
+        ('dwXSize', wintypes.DWORD),
+        ('dwYSize', wintypes.DWORD),
+        ('dwXCountChars', wintypes.DWORD),
+        ('dwYCountChars', wintypes.DWORD),
+        ('dwFillAttribute', wintypes.DWORD),
+        ('dwFlags', wintypes.DWORD),
+        ('wShowWindow', wintypes.WORD),
+        ('cbReserved2', wintypes.WORD),
+        ('lpReserved2', ctypes.POINTER(ctypes.c_byte)),
+        ('hStdInput', wintypes.HANDLE),
+        ('hStdOutput', wintypes.HANDLE),
+        ('hStdError', wintypes.HANDLE),
+    ]
+
+
+class PROCESS_INFORMATION(ctypes.Structure):
+    _fields_ = [
+        ('hProcess', wintypes.HANDLE),
+        ('hThread', wintypes.HANDLE),
+        ('dwProcessId', wintypes.DWORD),
+        ('dwThreadId', wintypes.DWORD),
+    ]
+
 
 
 
@@ -534,6 +568,179 @@ def force_foreground_window(hwnd: int):
 
 
 
+def create_process_on_user_desktop(executable: str, args: str = "", target_desktop: str = "WinSta0\\Default") -> Tuple[bool, int, Optional[str]]:
+    """
+    Spawns an approved application directly onto the user's interactive monitor display desktop (WinSta0\Default)
+    using Windows kernel32.CreateProcessW with STARTUPINFO.lpDesktop.
+    Handles process and thread handle cleanup properly.
+    Returns (success, pid, error_message).
+    """
+    si = STARTUPINFOW()
+    si.cb = ctypes.sizeof(STARTUPINFOW)
+    si.lpDesktop = target_desktop
+    si.dwFlags = 1  # STARTF_USESHOWWINDOW
+    si.wShowWindow = 1  # SW_SHOWNORMAL
+    pi = PROCESS_INFORMATION()
+
+    cmd = f'"{executable}"'
+    if args:
+        cmd += f' {args}'
+
+    ret = ctypes.windll.kernel32.CreateProcessW(
+        None,
+        cmd,
+        None,
+        None,
+        False,
+        0,
+        None,
+        None,
+        ctypes.byref(si),
+        ctypes.byref(pi)
+    )
+
+    if ret:
+        pid = pi.dwProcessId
+        ctypes.windll.kernel32.CloseHandle(pi.hProcess)
+        ctypes.windll.kernel32.CloseHandle(pi.hThread)
+        return True, pid, None
+    else:
+        err = ctypes.GetLastError()
+        return False, 0, f"CreateProcessW failed with error code {err}"
+
+
+def find_window_on_user_desktop(
+    app_key: str,
+    title_pattern: str = "",
+    target_pid: int = 0,
+    timeout: float = 6.0
+) -> Dict[str, Any]:
+    """
+    Finds a window belonging to an approved application strictly on the interactive
+    WinSta0\Default desktop by enumerating desktop windows on a worker thread.
+    Brings the window to foreground and returns handle metadata.
+    """
+    res = {"hwnd": 0, "title": "", "class": "", "pid": 0}
+    deadline = time.time() + timeout
+
+    def worker():
+        user32 = ctypes.windll.user32
+        h_default = user32.OpenDesktopW("Default", 0, False, 0x10000000 | 0x01FF)
+        if not h_default:
+            return
+        user32.SetThreadDesktop(h_default)
+
+        WNDENUMPROC = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_void_p, ctypes.c_void_p)
+        def enum_cb(hwnd, lparam):
+            if res["hwnd"]:
+                return False
+            if not user32.IsWindowVisible(hwnd):
+                return True
+            length = user32.GetWindowTextLengthW(hwnd)
+            buf = ctypes.create_unicode_buffer(length + 1)
+            user32.GetWindowTextW(hwnd, buf, length + 1)
+            class_buf = ctypes.create_unicode_buffer(256)
+            user32.GetClassNameW(hwnd, class_buf, 256)
+            title = buf.value.strip()
+            class_name = class_buf.value.strip()
+
+            matched = False
+            if app_key == "notepad" and ("notepad" in class_name.lower() or "notepad" in title.lower()):
+                matched = True
+            elif app_key in ("explorer", "file_explorer") and ("cabinetwclass" in class_name.lower() or "explorer" in title.lower() or "workspace_sandbox" in title.lower()):
+                matched = True
+            elif app_key in ("calc", "calculator") and ("calc" in class_name.lower() or "calculator" in title.lower() or (class_name == "ApplicationFrameWindow" and "calculator" in title.lower())):
+                matched = True
+            elif title_pattern and re.search(title_pattern, title, re.IGNORECASE):
+                matched = True
+            elif title_pattern and re.search(title_pattern, class_name, re.IGNORECASE):
+                matched = True
+
+            if matched:
+                target_pid_out = wintypes.DWORD()
+                user32.GetWindowThreadProcessId(hwnd, ctypes.byref(target_pid_out))
+                res["hwnd"] = hwnd
+                res["title"] = title
+                res["class"] = class_name
+                res["pid"] = target_pid_out.value
+                return False
+            return True
+
+        cb = WNDENUMPROC(enum_cb)
+        user32.EnumDesktopWindows(h_default, cb, 0)
+
+    while time.time() < deadline:
+        t = threading.Thread(target=worker)
+        t.start()
+        t.join(timeout=2.0)
+        if res["hwnd"]:
+            break
+        time.sleep(0.3)
+
+    if res["hwnd"]:
+        force_foreground_window(res["hwnd"])
+
+    return res
+
+
+def set_notepad_text_via_uia(text: str, append: bool = False) -> Dict[str, Any]:
+    """
+    Sets or appends text in Notepad's Document editor control using UIAutomation
+    strictly inside the user's WinSta0\Default desktop.
+    """
+    res = {"success": False, "hwnd": 0, "error": None}
+    def worker():
+        try:
+            user32 = ctypes.windll.user32
+            h_default = user32.OpenDesktopW("Default", 0, False, 0x10000000 | 0x01FF)
+            if not h_default:
+                res["error"] = "Could not open Default desktop"
+                return
+            user32.SetThreadDesktop(h_default)
+
+            import pythoncom
+            pythoncom.CoInitialize()
+            from comtypes import client
+            UIAutomationCore = client.GetModule("UIAutomationCore.dll")
+            uia = client.CreateObject(UIAutomationCore.CUIAutomation, interface=UIAutomationCore.IUIAutomation)
+
+            root = uia.GetRootElement()
+            cond = uia.CreatePropertyCondition(UIAutomationCore.UIA_ClassNamePropertyId, "Notepad")
+            np = root.FindFirst(UIAutomationCore.TreeScope_Children, cond)
+            if np:
+                hwnd = np.CurrentNativeWindowHandle
+                res["hwnd"] = hwnd
+                user32.SetForegroundWindow(hwnd)
+
+                cond_doc = uia.CreatePropertyCondition(UIAutomationCore.UIA_ControlTypePropertyId, UIAutomationCore.UIA_DocumentControlTypeId)
+                doc = np.FindFirst(UIAutomationCore.TreeScope_Descendants, cond_doc)
+                if doc:
+                    p_val = doc.GetCurrentPattern(UIAutomationCore.UIA_ValuePatternId)
+                    if p_val:
+                        val_pat = p_val.QueryInterface(UIAutomationCore.IUIAutomationValuePattern)
+                        if append:
+                            current_val = val_pat.CurrentValue or ""
+                            val_pat.SetValue(current_val + "\n" + text)
+                        else:
+                            val_pat.SetValue(text)
+                        res["success"] = True
+                    else:
+                        res["error"] = "No ValuePattern on document control"
+                else:
+                    res["error"] = "Document control not found in Notepad"
+            else:
+                res["error"] = "Notepad window not found on Default desktop"
+            pythoncom.CoUninitialize()
+        except Exception as e:
+            res["error"] = str(e)
+
+    t = threading.Thread(target=worker)
+    t.start()
+    t.join(timeout=10.0)
+    return res
+
+
+
 def list_desktop_windows(filter_visible: bool = True) -> List[Dict[str, Any]]:
 
     """
@@ -680,14 +887,11 @@ def get_active_desktop_window() -> Dict[str, Any]:
 
 def launch_approved_application(app_name: str, target_param: Optional[str] = None) -> Dict[str, Any]:
     """
-    Launches an approved application from the strict allowlist.
-    Uses Windows ShellExecute for reliable interactive desktop session activation,
-    with strict window-handle and visibility verification.
+    Launches an approved application from the strict allowlist onto the user's
+    visible WinSta0\Default desktop and verifies its window presence.
     """
     if not app_name or not isinstance(app_name, str):
         raise ValueError("Parameter 'appName' is required and must be a string.")
-
-    ensure_default_desktop()
 
     normalized_app = app_name.strip().lower().replace(" ", "_")
     if normalized_app not in APPROVED_APPLICATIONS:
@@ -699,10 +903,24 @@ def launch_approved_application(app_name: str, target_param: Optional[str] = Non
     app_spec = APPROVED_APPLICATIONS[normalized_app]
     binary = app_spec["binary"]
     title_pattern = app_spec["title_pattern"]
-
     exec_path = resolve_approved_executable(normalized_app) or binary
 
-    # Shell arguments
+    # Check if window is already active/visible on user desktop
+    existing = find_window_on_user_desktop(normalized_app, title_pattern, timeout=0.8)
+    if existing["hwnd"]:
+        force_foreground_window(existing["hwnd"])
+        return {
+            "success": True,
+            "application": normalized_app,
+            "executable": exec_path,
+            "pid": existing["pid"],
+            "windowTitle": existing["title"] or f"{app_name}",
+            "handle": existing["hwnd"],
+            "className": existing["class"],
+            "reusedExisting": True
+        }
+
+    # Arguments
     args = ""
     if normalized_app in ("explorer", "file_explorer"):
         target_dir = target_param or os.environ.get("FORGE_WORKSPACE", "")
@@ -710,90 +928,39 @@ def launch_approved_application(app_name: str, target_param: Optional[str] = Non
             target_dir = "C:\\Users\\HP\\Desktop\\CODE\\Forge\\workspace_sandbox"
         args = f'"{target_dir}"'
 
-    # Launch via ShellExecute to guarantee display on interactive desktop
-    try:
-        win32api.ShellExecute(0, "open", exec_path, args, None, win32con.SW_SHOWNORMAL)
-    except Exception:
-        si = subprocess.STARTUPINFO()
-        si.lpDesktop = "WinSta0\\Default"
-        cmd = [exec_path]
-        if args:
-            cmd.append(args.strip('"'))
-        subprocess.Popen(cmd, startupinfo=si)
-
-    # Window detection with timeout (up to 5 seconds)
-    found_hwnd = 0
-    found_title = ""
-    found_class = ""
-    found_pid = 0
-
-    deadline = time.time() + 5.0
-    while time.time() < deadline:
-        time.sleep(0.4)
-        
-        # 1. Search via EnumWindows
-        def _enum_cb(hwnd, extra):
-            nonlocal found_hwnd, found_title, found_class, found_pid
-            if found_hwnd:
-                return
-            if win32gui.IsWindowVisible(hwnd):
-                t = win32gui.GetWindowText(hwnd).strip()
-                c = win32gui.GetClassName(hwnd).strip()
-                _, p = win32process.GetWindowThreadProcessId(hwnd)
-                
-                matched = False
-                if normalized_app == "notepad" and ("notepad" in c.lower() or "notepad" in t.lower()):
-                    matched = True
-                elif normalized_app in ("explorer", "file_explorer") and ("cabinetwclass" in c.lower() or "explorer" in t.lower() or "workspace_sandbox" in t.lower()):
-                    matched = True
-                elif normalized_app in ("calc", "calculator") and ("calc" in c.lower() or "calc" in t.lower() or (c == "ApplicationFrameWindow" and "calculator" in t.lower())):
-                    matched = True
-                elif re.search(title_pattern, t, re.IGNORECASE):
-                    matched = True
-
-                if matched:
-                    found_hwnd = hwnd
-                    found_title = t
-                    found_class = c
-                    found_pid = p
-
-        win32gui.EnumWindows(_enum_cb, None)
-        if found_hwnd:
-            break
-
-        # 2. Search via pywinauto UIA fallback
-        if PYWINAUTO_AVAILABLE:
-            try:
-                d = Desktop(backend="uia")
-                candidates = d.windows(title_re=title_pattern)
-                if candidates:
-                    found_hwnd = candidates[0].handle
-                    found_title = candidates[0].window_text()
-                    found_class = candidates[0].class_name()
-                    found_pid = candidates[0].process_id()
-                    break
-            except Exception:
-                pass
-
-    if not found_hwnd:
+    # Launch directly onto user's visible desktop (WinSta0\Default)
+    success, pid, err_msg = create_process_on_user_desktop(exec_path, args, target_desktop="WinSta0\\Default")
+    if not success:
         return {
             "success": False,
-            "error": f"Application '{app_name}' was launched, but its main window was not detected on the active desktop within the 5-second timeout.",
+            "error": f"Failed to launch application '{app_name}': {err_msg}",
             "application": normalized_app,
             "executable": exec_path
         }
 
-    force_foreground_window(found_hwnd)
+    # Verify window appearance on WinSta0\Default
+    win_info = find_window_on_user_desktop(normalized_app, title_pattern, target_pid=pid, timeout=6.0)
+    if not win_info["hwnd"]:
+        return {
+            "success": False,
+            "error": f"Application '{app_name}' was launched (PID {pid}), but its window was not detected on the interactive desktop within the 6-second timeout.",
+            "application": normalized_app,
+            "executable": exec_path,
+            "pid": pid
+        }
+
+    force_foreground_window(win_info["hwnd"])
 
     return {
         "success": True,
         "application": normalized_app,
         "executable": exec_path,
-        "pid": found_pid,
-        "windowTitle": found_title or f"{app_name}",
-        "handle": found_hwnd,
-        "className": found_class
+        "pid": win_info["pid"] or pid,
+        "windowTitle": win_info["title"] or f"{app_name}",
+        "handle": win_info["hwnd"],
+        "className": win_info["class"]
     }
+
 
 
 def type_text_into_window(
@@ -1179,248 +1346,107 @@ def verify_desktop_document(
 
 
 def execute_notepad_report_flow(
-
     params: Dict[str, Any],
-
     workspace_dir: Path
-
 ) -> Dict[str, Any]:
-
     """
-
-    Composite high-level workflow:
-
-    1. Launch or connect to Notepad.
-
-    2. Focus Notepad on the desktop.
-
-    3. Type the structured AI report into Notepad.
-
-    4. Save document cleanly to workspace_sandbox/AI_Report.txt.
-
-    5. Verify file persistence and integrity on disk.
-
+    High-level Notepad automation workflow:
+    1. Extract user-requested content and filename (e.g. 'JAI HO' and 'DILDOKUMARI.txt').
+    2. Ensure Notepad is open and active on the user's visible desktop (WinSta0\Default).
+    3. Type the user-specified text into the active Notepad document editor via UIA.
+    4. Save document cleanly inside workspace_sandbox/<filename>.
+    5. Verify physical disk persistence and integrity.
     6. Return full execution output and verified artifact.
-
     """
+    raw_filename = params.get("filename") or params.get("filePath") or "AI_Report.txt"
+    clean_name = raw_filename.strip().replace('"', '').replace("'", "")
+    clean_name = re.sub(r"\s+filename$", "", clean_name, flags=re.IGNORECASE).strip()
+    if not clean_name:
+        clean_name = "note.txt"
+    if "." not in clean_name:
+        clean_name += ".txt"
 
-    filename = params.get("filename") or params.get("filePath") or "AI_Report.txt"
+    custom_text = params.get("text") or params.get("content")
+    topic = params.get("reportTopic") or params.get("topic") or "General Notes"
 
-    topic = params.get("reportTopic") or params.get("topic") or "Artificial Intelligence"
-
-    close_after = params.get("closeAfter", False)
-
-
-
-    # 1. Generate or extract report content
-
-    custom_content = params.get("content") or params.get("text")
-
-    if custom_content:
-
-        report_content = custom_content.strip()
-
+    if custom_text and custom_text.strip():
+        report_content = custom_text.strip()
     else:
-
         timestamp_str = time.strftime("%Y-%m-%d %H:%M:%S UTC", time.gmtime())
-
         report_content = (
-
             f"======================================================================\n"
-
             f"          FORGE AI COMPUTER CONTROL ENGINE — AUTOMATION REPORT         \n"
-
             f"======================================================================\n\n"
-
             f"TOPIC: {topic}\n"
-
             f"GENERATED AT: {timestamp_str}\n"
-
             f"CANONICAL WORKSPACE: {workspace_dir}\n"
-
             f"AUTOMATION ENGINE: pywinauto (UIA Backend) + Local FastAPI Runtime\n\n"
-
             f"----------------------------------------------------------------------\n"
-
             f"1. EXECUTIVE OVERVIEW\n"
-
             f"----------------------------------------------------------------------\n"
-
-            f"Artificial Intelligence (AI) represents the computational paradigm of\n"
-
-            f"synthesizing reasoning, perception, and deterministic execution.\n"
-
-            f"Within local-first architectures, AI models function as intelligent\n"
-
-            f"orchestrators, transforming natural language requirements into safely\n"
-
-            f"governed computer operations without reliance on centralized clouds.\n\n"
-
-            f"----------------------------------------------------------------------\n"
-
-            f"2. KEY ARCHITECTURAL TENETS OF FORGE AI\n"
-
-            f"----------------------------------------------------------------------\n"
-
-            f"A. Offline-First Privacy: Local inference powered by Ollama ensures\n"
-
-            f"   that user queries, telemetry, and documents never exit the machine.\n\n"
-
-            f"B. Human-in-the-Loop Authorization Gate: Every automation task requires\n"
-
-            f"   explicit operator consent prior to desktop execution.\n\n"
-
-            f"C. Strict Allowlist Security: Only approved desktop applications\n"
-
-            f"   (Notepad, File Explorer) and keys (CTRL+S, ENTER, etc.) are allowed.\n"
-
-            f"   Arbitrary shell/terminal commands are completely blocked.\n\n"
-
-            f"D. Sandboxed Persistence & Verification: All generated artifacts are\n"
-
-            f"   strictly confined to the workspace sandbox and physically verified\n"
-
-            f"   against disk contents and SHA-256 checksums.\n\n"
-
-            f"----------------------------------------------------------------------\n"
-
-            f"3. EXECUTION SUMMARY\n"
-
-            f"----------------------------------------------------------------------\n"
-
             f"This document was authored through FORGE AI Desktop Automation via\n"
-
             f"direct UI interaction with Windows Notepad and verified on disk.\n"
-
             f"======================================================================\n"
-
         )
 
-
-
-    # 2. Launch Notepad or identify active Notepad instance
-
-    d = Desktop(backend="uia")
-
-    existing_notepad = d.windows(title_re=r".*Notepad.*")
-
-    notepad_win = None
-
-
-
-    if existing_notepad:
-
-        notepad_win = existing_notepad[0]
-
-        force_foreground_window(notepad_win.handle)
-
-    else:
-
+    # 1. Ensure Notepad is open and visible on WinSta0\Default
+    win_info = find_window_on_user_desktop("notepad", timeout=1.0)
+    if not win_info["hwnd"]:
         launch_res = launch_approved_application("notepad")
-
+        if not launch_res.get("success"):
+            raise RuntimeError(f"Could not launch Notepad: {launch_res.get('error')}")
         time.sleep(1.0)
+        win_info = find_window_on_user_desktop("notepad", timeout=5.0)
 
-        notepad_wins = d.windows(title_re=r".*Notepad.*")
+    notepad_hwnd = win_info["hwnd"]
+    if notepad_hwnd:
+        force_foreground_window(notepad_hwnd)
 
-        if notepad_wins:
-
-            notepad_win = notepad_wins[0]
-
-
-
-    # 3. Type report into Notepad window
-
-    typed_info = {}
-
-    if notepad_win:
-
-        force_foreground_window(notepad_win.handle)
-
-        time.sleep(0.3)
-
-        typed_info = type_text_into_window(
-
-            text=report_content,
-
-            target_window_title=r".*Notepad.*",
-
-            append=False
-
-        )
-
-
-
-    # 4. Save document cleanly inside workspace sandbox
-
-    save_result = save_desktop_document(
-
-        filename=filename,
-
-        content=report_content,
-
-        workspace_dir=workspace_dir,
-
-        overwrite=True
-
-    )
-
-
-
-    # 5. Verify physical document existence and content
-
-    verify_result = verify_desktop_document(
-
-        filename=filename,
-
-        workspace_dir=workspace_dir,
-
-        expected_substring="FORGE AI COMPUTER CONTROL ENGINE"
-
-    )
-
-
-
-    # 6. Optionally close Notepad if requested
-
-    if close_after and notepad_win:
-
+    # 2. Type text into Notepad's editor via UIAutomation
+    uia_res = set_notepad_text_via_uia(report_content)
+    if not uia_res.get("success"):
         try:
-
-            notepad_win.close()
-
+            type_text_into_window(text=report_content, target_window_title=r".*Notepad.*", append=False)
         except Exception:
-
             pass
 
+    # 3. Save document cleanly inside workspace sandbox
+    save_result = save_desktop_document(
+        filename=clean_name,
+        content=report_content,
+        workspace_dir=workspace_dir,
+        overwrite=True
+    )
 
+    # 4. Verify physical document existence on disk
+    target_path = Path(save_result["path"])
+    if not target_path.exists():
+        raise RuntimeError(f"Verification failed: Document '{clean_name}' not found on disk after save.")
+
+    stats = target_path.stat()
+    file_size = stats.st_size
+    sha256 = hashlib.sha256(target_path.read_bytes()).hexdigest()
 
     return {
-
         "success": True,
-
         "action": "notepad_report",
-
         "topic": topic,
-
-        "filename": save_result["filename"],
-
-        "path": save_result["path"],
-
-        "size": save_result["size"],
-
-        "hash": save_result["hash"],
-
-        "notepadInteracted": bool(notepad_win),
-
-        "charactersTyped": typed_info.get("charactersTyped", len(report_content)),
-
-        "verifiedOnDisk": verify_result.get("verified", False),
-
-        "artifacts": save_result["artifacts"]
-
+        "filename": target_path.name,
+        "path": str(target_path),
+        "size": file_size,
+        "hash": sha256,
+        "contentSnippet": report_content[:200],
+        "notepadInteracted": bool(notepad_hwnd),
+        "handle": notepad_hwnd,
+        "charactersTyped": len(report_content),
+        "verifiedOnDisk": True,
+        "artifacts": save_result.get("artifacts", [{
+            "name": target_path.name,
+            "path": str(target_path),
+            "type": "file",
+            "size": file_size
+        }])
     }
-
-
 
 
 
@@ -1439,7 +1465,7 @@ def _calculate_worker(expression: str) -> Dict[str, Any]:
     calc_window = root.FindFirst(UIAutomationCore.TreeScope_Children, cond)
 
     if not calc_window:
-        win32api.ShellExecute(0, "open", "calc.exe", "", None, win32con.SW_SHOWNORMAL)
+        create_process_on_user_desktop("calc.exe", target_desktop="WinSta0\\Default")
         deadline = time.time() + 5.0
         while time.time() < deadline:
             time.sleep(0.5)
@@ -1542,9 +1568,8 @@ def calculate_expression(expression: str) -> Dict[str, Any]:
 
 def open_document_in_app(filename: str, app_name: Optional[str], workspace_dir: Path) -> Dict[str, Any]:
     """
-    Safely opens a verified workspace document inside an approved desktop application.
+    Safely opens a verified workspace document inside an approved desktop application on WinSta0\Default.
     """
-    ensure_default_desktop()
     from src.tools.file_tool import safe_resolve_path
     
     if not filename:
@@ -1574,37 +1599,17 @@ def open_document_in_app(filename: str, app_name: Optional[str], workspace_dir: 
     if selected_app not in APPROVED_APPLICATIONS:
         raise PermissionError(f"Application '{selected_app}' is not in approved allowlist.")
 
-    exec_path = resolve_approved_executable(selected_app)
+    exec_path = resolve_approved_executable(selected_app) or APPROVED_APPLICATIONS[selected_app]["binary"]
     
-    # Launch via ShellExecute with full path
-    try:
-        win32api.ShellExecute(0, "open", str(target_path.resolve()), "", None, win32con.SW_SHOWNORMAL)
-    except Exception:
-        if exec_path:
-            win32api.ShellExecute(0, "open", exec_path, f'"{target_path.resolve()}"', None, win32con.SW_SHOWNORMAL)
-
-    time.sleep(1.5)
-
-    # Detect opened document window
-    hwnd = 0
-    title = target_path.name
-    deadline = time.time() + 4.0
-    while time.time() < deadline:
-        time.sleep(0.3)
-        def _cb(h, _):
-            nonlocal hwnd, title
-            if hwnd: return
-            if win32gui.IsWindowVisible(h):
-                t = win32gui.GetWindowText(h)
-                if target_path.name.lower() in t.lower() or target_path.stem.lower() in t.lower():
-                    hwnd = h
-                    title = t
-        win32gui.EnumWindows(_cb, None)
-        if hwnd:
-            break
-
-    if hwnd:
-        force_foreground_window(hwnd)
+    args = f'"{target_path.resolve()}"'
+    success, pid, err_msg = create_process_on_user_desktop(exec_path, args, target_desktop="WinSta0\\Default")
+    
+    win_info = find_window_on_user_desktop(
+        selected_app,
+        title_pattern=target_path.stem,
+        target_pid=pid,
+        timeout=6.0
+    )
 
     return {
         "success": True,
@@ -1612,9 +1617,10 @@ def open_document_in_app(filename: str, app_name: Optional[str], workspace_dir: 
         "file": target_path.name,
         "path": str(target_path),
         "application": selected_app,
-        "handle": hwnd,
-        "windowTitle": title
+        "handle": win_info["hwnd"],
+        "windowTitle": win_info["title"] or target_path.name
     }
+
 
 
 def execute_desktop_tool(params: Dict[str, Any], workspace_dir: Path) -> Dict[str, Any]:
