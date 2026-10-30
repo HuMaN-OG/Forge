@@ -1,0 +1,23 @@
+﻿.venv/
+venv/
+__pycache__/
+*.py[cod]
+.env
+.env.*
+!.env.example
+.pytest_cache/
+.playwright/
+test-results/
+
+# Local application data
+local_data/
+workspace_sandbox/
+outputs/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Python generated files
+*.log
