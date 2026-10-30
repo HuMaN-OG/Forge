@@ -9,7 +9,7 @@ const {
 class AutomationService {
   constructor() {
     this.baseUrl = config.pythonAutomation.baseUrl.replace(/\/$/, '');
-    this.timeoutMs = 15000;
+    this.timeoutMs = 30000;
   }
 
   /**

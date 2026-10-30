@@ -68,7 +68,8 @@ async function handleHealthCheck(req, res) {
       sandboxDirectory: pyHealth.sandboxDirectory || config.workspace.path,
       registeredTools: [
         { name: 'excel_writer', type: 'offline', description: 'Create and format .xlsx spreadsheets locally (openpyxl)' },
-        { name: 'file_system', type: 'offline', description: 'Organize, copy, and inspect permitted workspace files' }
+        { name: 'file_system', type: 'offline', description: 'Organize, copy, and inspect permitted workspace files' },
+        { name: 'desktop_control', type: 'offline', description: 'Safe local desktop UI automation (Notepad, File Explorer) via pywinauto' }
       ]
     },
 

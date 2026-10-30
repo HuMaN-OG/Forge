@@ -37,3 +37,4 @@ automation/workspace_sandbox/
 *.db-wal
 *.db-shm
 *.log
+.forge-pids.json

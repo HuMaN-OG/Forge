@@ -14,7 +14,15 @@ async function run() {
 
   const backendUrl = `http://127.0.0.1:${config.port}`;
   const pythonUrl = config.pythonAutomation.baseUrl.replace(/\/$/, '');
-  const authToken = config.pythonAutomation.token || process.env.FORGE_AUTOMATION_TOKEN || 'forge_secret_token_2026';
+const authToken =
+  config.pythonAutomation.token ||
+  process.env.FORGE_AUTOMATION_TOKEN;
+
+if (!authToken) {
+  throw new Error(
+    'FORGE_AUTOMATION_TOKEN must be configured before running this test.'
+  );
+}
 
   // --------------------------------------------------------------------------
   // Check 1: Valid token and exact v1.0 contract request to Python

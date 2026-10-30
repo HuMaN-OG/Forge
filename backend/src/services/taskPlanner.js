@@ -23,7 +23,55 @@ class TaskPlanner {
     let riskLevel = isOnline ? 'Medium (External Network Access)' : 'Low (Restricted Local Directory Sandbox)';
 
     // Analyze specific intent
-    if (/excel|spreadsheet|xlsx|sheet/i.test(prompt)) {
+    if (/notepad|write.*report|desktop|active\s+window|launch\s+(?:application|app)|press\s+key/i.test(prompt)) {
+      title = 'Desktop Automation: Notepad Report';
+      plannedTool = REGISTERED_TOOLS.DESKTOP_CONTROL;
+      riskLevel = 'Medium (Local Desktop UI Automation)';
+
+      if (/list.*windows/i.test(prompt)) {
+        title = 'List Desktop Windows';
+        toolAction = 'list_windows';
+        toolParams = { action: 'list_windows', filterVisible: true };
+        impactDescription = 'Enumerate active top-level desktop windows.';
+      } else if (/active\s+window/i.test(prompt)) {
+        title = 'Get Active Desktop Window';
+        toolAction = 'get_active_window';
+        toolParams = { action: 'get_active_window' };
+        impactDescription = 'Query active foreground window and metadata.';
+      } else if (/launch\s+(?:application|app)|open\s+explorer/i.test(prompt) && !/notepad/i.test(prompt)) {
+        title = 'Launch Desktop Application';
+        toolAction = 'launch_application';
+        const appName = /explorer/i.test(prompt) ? 'file_explorer' : 'notepad';
+        toolParams = { action: 'launch_application', appName };
+        impactDescription = `Launch approved application '${appName}' safely.`;
+      } else {
+        // Default / Primary demonstration scenario: Notepad report
+        title = 'Desktop Automation: Notepad Report';
+        toolAction = 'notepad_report';
+
+        // Extract filename if specified (e.g. AI_Report.txt)
+        const fileMatch = prompt.match(/([a-zA-Z0-9_\-]+\.txt)/i) ||
+                          prompt.match(/(?:named|name|as|save\s+it\s+as)\s+["']?([a-zA-Z0-9_\-]+(?:\.txt)?)["']?/i);
+        let filename = fileMatch ? fileMatch[1] : 'AI_Report.txt';
+        if (!filename.toLowerCase().endsWith('.txt')) filename += '.txt';
+
+        // Extract topic if specified
+        let topic = 'Artificial Intelligence';
+        const topicMatch = prompt.match(/report\s+(?:about|on)\s+([^,.]+)/i);
+        if (topicMatch) {
+          topic = topicMatch[1].trim();
+        }
+
+        toolParams = {
+          action: 'notepad_report',
+          filename,
+          topic,
+          closeAfter: false
+        };
+        impactDescription = `Launch approved Notepad, enter report on '${topic}', save '${filename}' to canonical workspace sandbox, and verify on disk.`;
+      }
+
+    } else if (/excel|spreadsheet|xlsx|sheet/i.test(prompt)) {
       title = 'Create Structured Excel Workbook';
       plannedTool = REGISTERED_TOOLS.EXCEL_WRITER;
       toolAction = 'create_workbook';
@@ -161,6 +209,7 @@ class TaskPlanner {
         status: 'pending',
         message: `Dispatch permitted tool action to Python automation service (port 8000).`,
         tool: plannedTool,
+        toolAction,
         toolParams
       },
       {
@@ -187,6 +236,8 @@ class TaskPlanner {
       action: `Execute registered tool: ${plannedTool} (${toolAction})`,
       target: impactDescription,
       riskLevel,
+      toolAction,
+      toolParams,
       explanation: `FORGE AI requires your explicit authorization before calling '${plannedTool}'. ${impactDescription}`
     };
 

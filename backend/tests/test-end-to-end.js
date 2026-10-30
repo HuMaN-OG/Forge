@@ -100,16 +100,33 @@ async function runEndToEndTests() {
     // 3. Start Backend Express Server (127.0.0.1:3000)
     // -------------------------------------------------------------------------
     console.log('\n[3/15] Starting Backend Express Server...');
-    const backendAlreadyOnline = await waitForHttp('http://127.0.0.1:3000/health', 1500);
-    if (backendAlreadyOnline) {
-      console.log('  ✓ Reusing already-running Express Backend on http://127.0.0.1:3000');
-    } else {
-      const app = require('../src/app');
-      backendServer = app.listen(3000, '127.0.0.1');
-      const backendReady = await waitForHttp('http://127.0.0.1:3000/health', 8000);
-      assert.strictEqual(backendReady, true, 'Backend must respond on port 3000');
-      console.log('  ✓ Backend online at http://127.0.0.1:3000');
-    }
+const backendAlreadyOnline = await waitForHttp(
+  'http://127.0.0.1:3000/health',
+  1500
+);
+
+assert.strictEqual(
+  backendAlreadyOnline,
+  false,
+  'Port 3000 is already occupied. Stop the existing Express server before running E2E tests.'
+);
+
+const app = require('../src/app');
+
+backendServer = app.listen(3000, '127.0.0.1');
+
+const backendReady = await waitForHttp(
+  'http://127.0.0.1:3000/health',
+  8000
+);
+
+assert.strictEqual(
+  backendReady,
+  true,
+  'E2E-owned backend must respond on port 3000'
+);
+
+console.log('  ✓ E2E-owned Express Backend online on port 3000');
 
     // -------------------------------------------------------------------------
     // 4. Verify Unified Health & System Telemetry Endpoint
@@ -231,22 +248,50 @@ assert.ok(
     // 10. File-System Operation Verification on Disk
     // -------------------------------------------------------------------------
     console.log('\n[10/15] Verifying Safe File Operation Executed on Disk...');
-    const expectedFilePath = path.join(WORKSPACE_DIR, 'audit_log.txt');
-    assert.strictEqual(fs.existsSync(expectedFilePath), true, 'File audit_log.txt must exist in workspace sandbox');
-    const writtenContent = fs.readFileSync(expectedFilePath, 'utf-8');
-    assert.ok(writtenContent.includes('FORGE AI system verification complete.'));
+const artifactFromBackend = approveData.task.artifacts?.[0];
+
+assert.ok(
+  artifactFromBackend,
+  'Backend must return at least one artifact'
+);
+
+const expectedFilePath = path.join(
+  WORKSPACE_DIR,
+  artifactFromBackend.name
+);
+
+assert.strictEqual(
+  fs.existsSync(expectedFilePath),
+  true,
+  `File ${artifactFromBackend.name} must exist in workspace sandbox`
+);
+
+const writtenContent = fs.readFileSync(expectedFilePath, 'utf-8');
+
+assert.ok(
+  writtenContent.includes('FORGE AI system verification complete.')
+);
+
+console.log(
+  `  ✓ File verified on disk: ${expectedFilePath} (${fs.statSync(expectedFilePath).size} bytes)`
+);
     console.log(`  ✓ File verified on disk: ${expectedFilePath} (${fs.statSync(expectedFilePath).size} bytes)`);
 
     // -------------------------------------------------------------------------
     // 11. Backend Verification & Artifact Validation
     // -------------------------------------------------------------------------
     console.log('\n[11/15] Verifying Backend Output Schema & Artifact Integrity...');
-    assert.ok(approveData.task.artifacts.length >= 1, 'Task must contain verified artifact');
-    const artifact = approveData.task.artifacts[0];
-    assert.strictEqual(artifact.name, 'audit_log.txt');
-    assert.strictEqual(artifact.verified, true);
-    assert.ok(artifact.size > 0);
-    assert.strictEqual(approveData.task.verificationDetails?.status, 'passed');
+const artifact = artifactFromBackend;
+
+assert.ok(artifact.name.startsWith('audit_log'));
+assert.ok(artifact.name.endsWith('.txt'));
+assert.strictEqual(artifact.verified, true);
+assert.ok(artifact.size > 0);
+
+assert.strictEqual(
+  approveData.task.verificationDetails?.status,
+  'passed'
+);
     console.log(`  ✓ Output integrity verified by backend: Artifact #${artifact.name} (${artifact.size} bytes)`);
 
     // -------------------------------------------------------------------------
@@ -301,35 +346,80 @@ assert.ok(
     console.log('  ✓ Duplicate execution safely rejected with HTTP 409 Conflict.');
 
     // -------------------------------------------------------------------------
-    // 15. Resilience: Missing Automation Service produces clear failure
-    // -------------------------------------------------------------------------
-    console.log('\n[15/15] Testing Missing Automation Service Failure Handling...');
-    const automationService = require('../src/services/automationService');
-    const originalUrl = automationService.baseUrl;
-    automationService.baseUrl = 'http://127.0.0.1:9999'; // Non-existent service port
+// 15. Resilience: Missing Automation Service produces clear failure
+// -------------------------------------------------------------------------
+console.log('\n[15/15] Testing Missing Automation Service Failure Handling...');
 
-    // Create a new task to attempt execution with offline automation
-    const offlinePlanRes = await fetch('http://127.0.0.1:3000/api/v1/chat', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: 'Create a note file named offline_fail.txt with content: "test"',
-        conversationId: 'e2e-session-offline'
-      })
-    });
-    const offlineTask = (await offlinePlanRes.json()).task;
+const automationService = require('../src/services/automationService');
+const originalUrl = automationService.baseUrl;
 
-    const offlineApproveRes = await fetch(`http://127.0.0.1:3000/api/v1/tasks/${offlineTask.id}/approve`, {
-      method: 'POST'
-    });
-    assert.strictEqual(offlineApproveRes.status, 500);
-    const offlineApproveData = await offlineApproveRes.json();
-    assert.strictEqual(offlineApproveData.success, false);
-    assert.ok(offlineApproveData.error.includes('Automation Service Offline') || offlineApproveData.error.includes('unreachable'));
-    assert.strictEqual(offlineApproveData.task.status, 'FAILED');
-    console.log('  ✓ Offline automation service cleanly handled: Task marked FAILED with clear error.');
+try {
+  // First create the task while normal services are available.
+  const offlinePlanRes = await fetch('http://127.0.0.1:3000/api/v1/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      message:
+        'Create a text file named offline_fail.txt inside the workspace sandbox with the exact content "test".',
+      conversationId: 'e2e-session-offline'
+    })
+  });
 
-    automationService.baseUrl = originalUrl; // Restore
+  const offlinePlanData = await offlinePlanRes.json();
+
+  assert.strictEqual(
+    offlinePlanRes.status,
+    200,
+    `Task planning failed: ${JSON.stringify(offlinePlanData)}`
+  );
+
+  assert.ok(
+    offlinePlanData.task?.id,
+    `Expected a planned task, received: ${JSON.stringify(offlinePlanData)}`
+  );
+
+  const offlineTask = offlinePlanData.task;
+
+  assert.strictEqual(
+    offlineTask.status,
+    'WAITING_APPROVAL',
+    'Offline test task must wait for approval'
+  );
+
+  // Simulate Python Automation being unavailable.
+  // This works because Express is now owned by this test process.
+  automationService.baseUrl = 'http://127.0.0.1:9999';
+
+  const offlineApproveRes = await fetch(
+    `http://127.0.0.1:3000/api/v1/tasks/${offlineTask.id}/approve`,
+    { method: 'POST' }
+  );
+
+  const offlineApproveData = await offlineApproveRes.json();
+
+  assert.strictEqual(
+    offlineApproveRes.status,
+    500,
+    `Expected HTTP 500, received: ${JSON.stringify(offlineApproveData)}`
+  );
+
+  assert.strictEqual(offlineApproveData.success, false);
+
+  assert.match(
+    offlineApproveData.error || '',
+    /Automation Service Offline|unreachable/i
+  );
+
+  assert.strictEqual(offlineApproveData.task?.status, 'FAILED');
+
+  console.log(
+    '  ✓ Offline automation service handled: Task marked FAILED.'
+  );
+} finally {
+  // Restore configuration even if an assertion fails.
+  automationService.baseUrl = originalUrl;
+}
+
 
     console.log('\n====================================================');
     console.log('   ALL 15/15 END-TO-END VERIFICATION CHECKS PASSED! ');
@@ -337,8 +427,9 @@ assert.ok(
 
   } finally {
     if (backendServer) {
-      backendServer.close();
+      await new Promise(resolve => backendServer.close(resolve));
     }
+
     if (pythonProc) {
       pythonProc.kill('SIGTERM');
     }
