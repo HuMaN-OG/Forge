@@ -121,18 +121,6 @@ Forge/
 └── automation/     # Python desktop automation service
 ```
 
----
-
-## 👥 Team
-
-| Team Member | Role |
-|---|---|
-| **Priyanshu** | Python Automation Lead |
-| **Bhuvan** | Backend & AI Lead |
-| **Vansh** | Frontend Lead |
-
----
-
 ## 🎯 Our Vision
 
 We believe the next generation of AI should do more than generate answers.
