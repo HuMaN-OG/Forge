@@ -118,7 +118,7 @@ def execute_file_tool(params: Dict[str, Any], workspace_dir: Path) -> Dict[str, 
             }
 
         elif action in ("write_file", "create_file"):
-            rel_file = params.get("targetFile") or params.get("filePath") or params.get("file")
+            rel_file = params.get("targetFile") or params.get("filePath") or params.get("file") or params.get("path")
             if not rel_file:
                 return {"success": False, "error": "Missing required parameter 'targetFile' or 'filePath'"}
 
@@ -151,7 +151,7 @@ def execute_file_tool(params: Dict[str, Any], workspace_dir: Path) -> Dict[str, 
             }
 
         elif action == "read_file":
-            rel_file = params.get("targetFile") or params.get("filePath") or params.get("file")
+            rel_file = params.get("targetFile") or params.get("filePath") or params.get("file") or params.get("path")
             if not rel_file:
                 return {"success": False, "error": "Missing required parameter 'targetFile'"}
 
