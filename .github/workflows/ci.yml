@@ -32,6 +32,7 @@ jobs:
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
       - run: node --check src/server.js
+      - run: node tests/test-unit.js
   python-syntax:
     runs-on: ubuntu-latest
     steps:
