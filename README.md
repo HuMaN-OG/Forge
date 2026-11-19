@@ -121,6 +121,52 @@ Forge/
 └── automation/     # Python desktop automation service
 ```
 
+## Run locally (Windows)
+
+FORGE consists of three services. Run each in a separate PowerShell terminal. The desktop automation layer depends on Windows libraries.
+
+**Python automation service**
+
+```powershell
+cd automation
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+$env:FORGE_AUTOMATION_TOKEN = "choose-a-local-secret"
+python -m uvicorn src.main:app --host 127.0.0.1 --port 8000
+```
+
+Check `http://127.0.0.1:8000/health`.
+
+**Node.js backend**
+
+```powershell
+cd backend
+Copy-Item .env.example .env
+npm install
+npm start
+```
+
+Edit `backend/.env` to set `FORGE_AUTOMATION_TOKEN` to the exact same secret used by the automation service and `PYTHON_AUTOMATION_URL=http://127.0.0.1:8000`. The backend defaults to `http://127.0.0.1:3000`; its health endpoint is `/health`. Ollama is optional for startup; a rules-based fallback is documented in the server.
+
+**Frontend**
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`. Never commit real API keys or tokens.
+
+## Demonstration and contributions
+
+The repository contains the React frontend, Node.js orchestration backend, and Python automation layer. My resume describes my integration work and permission-aware execution workflow; it does not claim sole authorship of every component.
+
+To demonstrate the system, capture actual screens for (1) task submission, (2) approval before execution, and (3) verified completion. **Real screenshots have not been added here yet.** Keep private files, credentials, and personal data out of screenshots. Do not represent mockups as evidence of a running application.
+
+---
+
 ## 🎯 Our Vision
 
 We believe the next generation of AI should do more than generate answers.
