@@ -9,7 +9,7 @@
 FORGE AI is an agentic desktop automation assistant engineered to process natural language requests, formulate structured multi-stage execution plans, enforce mandatory human approval gates, and execute verified computer operations safely within an isolated workspace sandbox.
 
 ### Core Capabilities
-- **Natural Language Intent Routing**: Automatically classifies incoming operator prompts into conversational queries (`CHAT`), multi-step computer tasks (`TASK`), or ambiguity resolution (`AMBIGUOUS`).
+- **Natural Language Task Understanding**: Describe multi-step computer tasks using everyday language (`CHAT`, `TASK`, `AMBIGUOUS`).
 - **Human Authorization Safety Gate**: Destructive file modifications, workbook writes, and desktop operations cannot execute without explicit operator confirmation (`/approve`).
 - **Strict Security Gate**: Policy middleware blocks arbitrary terminal, shell, or powershell commands. Execution is strictly restricted to registered, validated tool schemas.
 - **Inter-Service Security**: Node.js orchestrator communicates with the Python FastAPI automation runtime via mutual `X-FORGE-TOKEN` authentication.
@@ -75,6 +75,19 @@ flowchart TD
 
 ---
 
+## 🛠️ Technology Stack
+
+| Layer | Technologies |
+|---|---|
+| **Frontend** | React, Vite, Tailwind CSS, Lucide Icons |
+| **Backend Orchestrator** | Node.js, Express, Zod, SQLite (`better-sqlite3`) |
+| **AI & NLP** | Groq API, Ollama (Local LLM fallback), Rule-based Planner |
+| **Automation Runtime** | Python 3.11+, FastAPI, Uvicorn, Pydantic |
+| **Office & Desktop Tools** | OpenPyXL (Excel), PyAutoGUI, Windows API |
+| **Testing & CI** | Jest / Node test runner, Pytest, GitHub Actions |
+
+---
+
 ## 🧪 Running Automated Tests
 
 ### 1. Backend Unit & Integration Tests (Node.js)
@@ -92,16 +105,56 @@ pytest tests/test_automation_service.py -v
 
 ---
 
-## 🚀 Running the Full Stack (Windows)
+## 🚀 Running the System (Windows)
 
-Launch all three services simultaneously using the PowerShell bootstrap script:
+### Option A: One-Click PowerShell Launcher
 ```powershell
 .\start-forge.ps1
 ```
-This launcher initializes:
-1. **Python FastAPI Automation Runtime**: `http://127.0.0.1:8000`
-2. **Node.js Express Backend Orchestrator**: `http://127.0.0.1:3000`
-3. **React / Vite Frontend**: `http://127.0.0.1:5173`
+This launcher starts:
+1. Python FastAPI Automation Runtime on `http://127.0.0.1:8000`
+2. Node.js Express Backend on `http://127.0.0.1:3000`
+3. React Vite Frontend on `http://127.0.0.1:5173`
+
+---
+
+### Option B: Manual Multi-Terminal Startup
+
+**1. Python Automation Service**
+```powershell
+cd automation
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+$env:FORGE_AUTOMATION_TOKEN = "your-local-secret"
+python -m uvicorn src.main:app --host 127.0.0.1 --port 8000
+```
+Verify at `http://127.0.0.1:8000/health`.
+
+**2. Node.js Backend Orchestrator**
+```powershell
+cd backend
+Copy-Item .env.example .env
+npm install
+npm start
+```
+Configure `backend/.env` with `FORGE_AUTOMATION_TOKEN=your-local-secret` matching the Python service. Backend runs on `http://127.0.0.1:3000` (health check at `/health`).
+
+**3. React Frontend**
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+Open `http://localhost:5173` in your browser.
+
+---
+
+## 🔒 Demonstration and Honesty
+
+- **Authentic Engineering**: The repository contains the working React frontend, Node.js orchestration backend, and Python automation layer. Team members' individual contributions are strictly and transparently documented.
+- **Safety First**: Destructive operations always require operator confirmation. The security policy gate blocks shell injection attempts by design.
+- **No Mockups**: Verify live runtime functionality via automated integration tests and running services.
 
 ---
 
