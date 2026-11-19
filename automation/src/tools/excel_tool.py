@@ -35,7 +35,9 @@ def execute_excel_tool(params: Dict[str, Any], workspace_dir: Path) -> Dict[str,
         }
 
     action = params.get("action", "create_workbook")
-    rel_path = params.get("filePath")
+    if action == "create_sheet":
+        action = "create_workbook"
+    rel_path = params.get("filePath") or params.get("filename") or params.get("path")
     if not rel_path:
         return {
             "success": False,

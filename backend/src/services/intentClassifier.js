@@ -195,8 +195,8 @@ function fallbackRuleClassifier(prompt) {
 
   // Ambiguous patterns: vague action verbs or missing targets/parameters
   const ambiguousPatterns = [
-    /^(can you\s+)?(fix|clean|do|sort|handle|process|run)\s+(it|this|them|the files?|things?)\??$/i,
-    /^(please\s+)?(fix|organize|do)\s+my\s+files?\??$/i,
+    /^(can you\s+)?(fix|clean|do|sort|handle|process|run)\s+(it|this|them|the files?|things?)(?:\s+for\s+me)?\??$/i,
+    /^(please\s+)?(fix|organize|do)\s+my\s+files?(?:\s+for\s+me)?\??$/i,
     /^(read|open|modify|check)\s+(the\s+)?(file|document)\??$/i,
     /^(open|modify)\s+something\??$/i,
     /^(?:please\s+)?(?:create|make|build|generate)\s+(?:an?\s+)?(?:excel|spreadsheet|excel\s+file|sheet|report|document|word\s+document|pdf|presentation)[.!]?\??$/i,
@@ -228,12 +228,17 @@ function fallbackRuleClassifier(prompt) {
   const taskPatterns = [
     /\b(continue|resume|proceed|go ahead)\b/i,
     /\b(read|view|inspect|display|show|cat|summarize)\b.*\b(file|document|contents?|pdf|docx|\.[a-zA-Z0-9]+)\b/i,
-    /\b(create|generate|make|build|export|convert|write)\b.*\b(excel|spreadsheet|xlsx|csv|workbook|report|table|word|docx|pdf|powerpoint|presentation|slides|pptx|json|file|document)\b/i,
+    /\b(create|generate|make|build|export|convert|write)\b.*\b(excel|spreadsheet|xlsx|csv|workbook|report|table|word|docx|pdf|powerpoint|presentation|slides|pptx|json|file|document|folder|directory)\b/i,
+    /\b(create|make|new)\s+(?:a\s+)?(?:new\s+)?(?:folder|directory)\b/i,
+    /\b(copy|move|rename|delete|remove)\b.*\b(file|folder|document|\.[a-zA-Z0-9]+)\b/i,
+    /\b(append|add|edit|modify|update|replace)\b.*\b(file|row|record|section|slide|document|workbook|sheet|text|data|\.[a-zA-Z0-9]+)\b/i,
+    /\b(calculate|compute|solve)\b|\bcalc\b.*\d+/i,
+    /\b(search|find)\b.*\b(files?|documents?)\b/i,
+    /\b(size|info|metadata|stat)\b.*\b(file|document|\.[a-zA-Z0-9]+)\b/i,
     /\b(organize|sort|move|categorize)\b.*\b(folder|directory|downloads|documents|files)\b/i,
     /\b(list)\b.*\b(files|dir|directory|workspace|windows)\b/i,
-    /\b(open|launch)\b.*\b(notepad|explorer|word|winword|excel|powerpoint|ppt|chrome|edge|vscode|code|calc|calculator|generated|\.[a-zA-Z0-9]+)\b/i,
-    /\b(extract|parse)\b.*\b(pdf|invoice|receipt|data|document)\b/i
-  ];
+    /\b(open|launch|start|run)\b\s+(?:approved\s+)?(?:the\s+)?(?:app(?:lication)?\s+)?([a-zA-Z0-9_\-\s]+)\b/i,
+    /\b(extract|parse)\b.*\b(pdf|invoice|receipt|data|document)\b/i  ];
 
   for (const pattern of taskPatterns) {
     if (pattern.test(p)) {

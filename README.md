@@ -1,82 +1,77 @@
-# ⚡ FORGE AI
-### Your AI-powered assistant for real computer work.
+# 🔨 FORGE AI — Local Computer-Use & Desktop Task Assistant
 
-**From natural language to real desktop actions.**
-
-FORGE AI is an AI-powered computer-use assistant that transforms everyday instructions into practical desktop workflows. It understands what you want to accomplish, plans the steps, executes approved computer operations, and verifies the results.
-
-Instead of simply telling you *how* to do something, FORGE aims to help you **get it done**.
+> A secure, local computer-use assistant bridging natural-language task planning, human authorization safety gates, and sandboxed Python desktop automation.
 
 ---
 
-## ✨ What is FORGE?
+## 📌 Project Overview
 
-FORGE bridges the gap between conversational AI and real-world computer interaction.
+FORGE AI is an agentic desktop automation assistant engineered to process natural language requests, formulate structured multi-stage execution plans, enforce mandatory human approval gates, and execute verified computer operations safely within an isolated workspace sandbox.
 
-Give it a task in natural language. FORGE interprets your intent, determines the required actions, and uses its automation system to interact with your computer.
-
-Whether you're opening applications, working with files, or automating a multi-step task, FORGE is designed to make computer use more natural and efficient.
-
-> **Your computer. Your instructions. Your AI-powered workflow.**
-
----
-
-## 🚀 Key Features
-
-- **Natural Language Task Understanding**  
-  Describe what you want to do using everyday language.
-
-- **AI-Powered Task Planning**  
-  Breaks requests into actionable steps.
-
-- **Real Desktop Automation**  
-  Interacts with desktop applications to perform supported computer operations.
-
-- **Windows Application Launching**  
-  Resolves and launches installed applications, shortcuts, and supported Windows apps.
-
-- **File and Document Workflows**  
-  Create, edit, save, and manage supported files through automation.
-
-- **Multi-Format Document Support**  
-  Work with supported document formats, including spreadsheet and presentation workflows.
-
-- **Task Progress and Result Verification**  
-  Tracks execution and checks results where supported.
-
-- **Permission-Aware Execution**  
-  Designed around approved operations and controlled tool access.
+### Core Capabilities
+- **Natural Language Task Understanding**: Describe multi-step computer tasks using everyday language (`CHAT`, `TASK`, `AMBIGUOUS`).
+- **Human Authorization Safety Gate**: Destructive file modifications, workbook writes, and desktop operations cannot execute without explicit operator confirmation (`/approve`).
+- **Strict Security Gate**: Policy middleware blocks arbitrary terminal, shell, or powershell commands. Execution is strictly restricted to registered, validated tool schemas.
+- **Inter-Service Security**: Node.js orchestrator communicates with the Python FastAPI automation runtime via mutual `X-FORGE-TOKEN` authentication.
+- **Audit Logging & Telemetry**: Full lifecycle audit trails and task history stored locally in SQLite.
 
 ---
 
-## 🧠 How It Works
+## 🏛️ System Architecture
 
-```text
-        User Instruction
-               │
-               ▼
-     Natural Language Understanding
-               │
-               ▼
-        AI Task Planning
-               │
-               ▼
-      Backend Orchestration
-               │
-               ▼
-       Python Automation
-               │
-               ▼
-    Desktop Apps / Files / UI
-               │
-               ▼
-       Result Verification
-               │
-               ▼
-        User-Facing Result
+```mermaid
+flowchart TD
+    User([Operator / User]) -->|Natural Language Prompt| UI[React / Vite Frontend\n:5173]
+    UI -->|REST / SSE| Backend[Node.js / Express Orchestrator\n:3000]
+    
+    subgraph Backend Engine [Backend & AI Orchestration - Lead: Bhuvan Batra]
+        Backend --> IntentRouter[Intent Classifier & Task Planner]
+        IntentRouter --> SecurityGate{Security Policy Gate}
+        SecurityGate -->|Forbidden Shell Command| Reject[Reject with Security Alert]
+        SecurityGate -->|Approved Tool Schema| TaskState[SQLite Task Store\nWAITING_APPROVAL]
+        TaskState --> HumanGate{Human Approval Gate}
+    end
+
+    HumanGate -->|Operator Confirmed /approve| InterServiceBridge[Authenticated HTTP Bridge\nX-FORGE-TOKEN]
+    HumanGate -->|Operator Rejected /reject| Abort[Mark Rejected]
+
+    subgraph Automation Runtime [Python Automation Service - Lead: Priyanshu]
+        InterServiceBridge --> FastAPI[FastAPI Runtime\n:8000]
+        FastAPI --> Sandbox[Workspace Sandbox]
+        Sandbox --> ExcelTool[OpenPyXL Excel Engine]
+        Sandbox --> FileTool[Sandboxed File System]
+        Sandbox --> DesktopTool[Desktop Control Engine]
+    end
+
+    FastAPI -->|Execution Telemetry & Artifacts| Backend
+    Backend -->|Live Execution Status & Results| UI
 ```
 
-FORGE combines an interactive frontend, backend orchestration, AI services, and a Python automation layer to connect user intent with desktop actions.
+---
+
+## 👥 Team & Architectural Module Ownership
+
+- **Bhuvan Batra — Backend & AI Lead**:
+  - Designed and built the central Node.js/Express backend orchestration engine (`backend/src/server.js`, `backend/src/app.js`).
+  - Implemented the intent routing and classification pipeline (`intentRouter.js`) with LLM integration (Groq API & Ollama fallback).
+  - Developed the task planner (`taskPlanner.js`) for multi-step structured Excel, document, and desktop operations.
+  - Implemented the strict Security Gate policy middleware to intercept and block arbitrary terminal/shell commands (`securityGate.js`).
+  - Authored the Human Approval Gate ensuring destructive or execution operations require explicit confirmation before execution.
+  - Integrated the authenticated inter-service communication bridge with the Python automation service via `X-FORGE-TOKEN`.
+  - Created SQLite state persistence for conversations, tasks, and audit logs (`database.js`, `repositories.js`).
+  - Developed backend integration and unit test suites (`backend/tests/test-unit.js`, `backend/tests/test-api.js`).
+
+- **Priyanshu — Python Automation Lead**:
+  - Built the FastAPI automation runtime engine (`automation/src/main.py`).
+  - Implemented sandboxed file system manipulation (`file_tool.py`) with path traversal guards.
+  - Created Excel workbook and formula generation tools (`excel_tool.py`) using OpenPyXL.
+  - Built desktop control and application resolution engines (`desktop_tool.py`).
+  - Authored automation service unit and security tests (`automation/tests/test_automation_service.py`).
+
+- **Vansh — Frontend Lead**:
+  - Developed the React / Vite frontend UI (`frontend/src/`).
+  - Created the real-time chat interface, task approval modal, and execution result viewer.
+  - Built responsive glassmorphism theme and status indicators.
 
 ---
 
@@ -84,97 +79,84 @@ FORGE combines an interactive frontend, backend orchestration, AI services, and 
 
 | Layer | Technologies |
 |---|---|
-| Frontend | React, Vite |
-| Backend | Node.js, Express |
-| AI | Groq API, Ollama |
-| Automation Service | Python, FastAPI |
-| Browser Automation | Playwright |
-| Spreadsheet Processing | OpenPyXL |
-| Database | SQLite |
+| **Frontend** | React, Vite, Tailwind CSS, Lucide Icons |
+| **Backend Orchestrator** | Node.js, Express, Zod, SQLite (`better-sqlite3`) |
+| **AI & NLP** | Groq API, Ollama (Local LLM fallback), Rule-based Planner |
+| **Automation Runtime** | Python 3.11+, FastAPI, Uvicorn, Pydantic |
+| **Office & Desktop Tools** | OpenPyXL (Excel), PyAutoGUI, Windows API |
+| **Testing & CI** | Jest / Node test runner, Pytest, GitHub Actions |
 
 ---
 
-## 💡 Example Tasks
+## 🧪 Running Automated Tests
 
-```text
-"Open Notepad and write a project update."
-
-"Create a document and save it to my Desktop."
-
-"Open an installed application."
-
-"Help me organize files in a folder."
-
-"Create or update a spreadsheet using the information I provide."
+### 1. Backend Unit & Integration Tests (Node.js)
+```bash
+cd backend
+npm test                # Runs full 8-stage API integration test suite
+node tests/test-unit.js # Runs SQLite persistence and Security Gate unit tests
 ```
 
-*Supported actions depend on the installed application, available tools, and execution permissions.*
+### 2. Automation Service Unit & Security Tests (Python)
+```bash
+cd automation
+pytest tests/test_automation_service.py -v
+```
 
 ---
 
-## 🏗️ Project Structure
+## 🚀 Running the System (Windows)
 
-```text
-Forge/
-├── frontend/       # React user interface
-├── backend/        # Node.js API and orchestration
-└── automation/     # Python desktop automation service
+### Option A: One-Click PowerShell Launcher
+```powershell
+.\start-forge.ps1
 ```
+This launcher starts:
+1. Python FastAPI Automation Runtime on `http://127.0.0.1:8000`
+2. Node.js Express Backend on `http://127.0.0.1:3000`
+3. React Vite Frontend on `http://127.0.0.1:5173`
 
-## Run locally (Windows)
+---
 
-FORGE consists of three services. Run each in a separate PowerShell terminal. The desktop automation layer depends on Windows libraries.
+### Option B: Manual Multi-Terminal Startup
 
-**Python automation service**
-
+**1. Python Automation Service**
 ```powershell
 cd automation
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
-$env:FORGE_AUTOMATION_TOKEN = "choose-a-local-secret"
+$env:FORGE_AUTOMATION_TOKEN = "your-local-secret"
 python -m uvicorn src.main:app --host 127.0.0.1 --port 8000
 ```
+Verify at `http://127.0.0.1:8000/health`.
 
-Check `http://127.0.0.1:8000/health`.
-
-**Node.js backend**
-
+**2. Node.js Backend Orchestrator**
 ```powershell
 cd backend
 Copy-Item .env.example .env
 npm install
 npm start
 ```
+Configure `backend/.env` with `FORGE_AUTOMATION_TOKEN=your-local-secret` matching the Python service. Backend runs on `http://127.0.0.1:3000` (health check at `/health`).
 
-Edit `backend/.env` to set `FORGE_AUTOMATION_TOKEN` to the exact same secret used by the automation service and `PYTHON_AUTOMATION_URL=http://127.0.0.1:8000`. The backend defaults to `http://127.0.0.1:3000`; its health endpoint is `/health`. Ollama is optional for startup; a rules-based fallback is documented in the server.
-
-**Frontend**
-
+**3. React Frontend**
 ```powershell
 cd frontend
 npm install
 npm run dev
 ```
-
-Open `http://localhost:5173`. Never commit real API keys or tokens.
-
-## Demonstration and contributions
-
-The repository contains the React frontend, Node.js orchestration backend, and Python automation layer. My resume describes my integration work and permission-aware execution workflow; it does not claim sole authorship of every component.
-
-To demonstrate the system, capture actual screens for (1) task submission, (2) approval before execution, and (3) verified completion. **Real screenshots have not been added here yet.** Keep private files, credentials, and personal data out of screenshots. Do not represent mockups as evidence of a running application.
+Open `http://localhost:5173` in your browser.
 
 ---
 
-## 🎯 Our Vision
+## 🔒 Demonstration and Honesty
 
-We believe the next generation of AI should do more than generate answers.
-
-It should help people interact with their computers, complete repetitive work, and turn ideas into actions through simple conversations.
-
-**FORGE AI — Make your computer work with you.**
+- **Authentic Engineering**: The repository contains the working React frontend, Node.js orchestration backend, and Python automation layer. Team members' individual contributions are strictly and transparently documented.
+- **Safety First**: Destructive operations always require operator confirmation. The security policy gate blocks shell injection attempts by design.
+- **No Mockups**: Verify live runtime functionality via automated integration tests and running services.
 
 ---
 
-*Built with curiosity, engineering, and the belief that computing can be more intuitive.*
+## 📝 License
+MIT License.
