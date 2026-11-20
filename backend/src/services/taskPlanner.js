@@ -50,7 +50,7 @@ class TaskPlanner {
 
 
 
-    const taskId = `task-${Date.now().toString().slice(-6)}`;
+    const taskId = `task-${require('node:crypto').randomUUID()}`;
 
 
 
