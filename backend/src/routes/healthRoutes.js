@@ -35,12 +35,15 @@ async function handleHealthCheck(req, res) {
   }
 
   const latencyMs = Math.max(1, Math.round(performance.now() - start));
-  const isAllHealthy = dbStatus === 'healthy' && ollamaHealth.available;
+  const isAllHealthy = dbStatus === 'healthy' && !!ollamaHealth.hasTargetModel && pyHealth.available && !!config.pythonAutomation.token;
 
   const payload = {
     status: isAllHealthy ? 'healthy' : 'degraded',
     timestamp: new Date().toISOString(),
     uptimeSeconds: Math.floor(process.uptime()),
+
+    readyForLocalAutomation: dbStatus === 'healthy' && pyHealth.available && !!config.pythonAutomation.token,
+    readyForLocalAI: !!ollamaHealth.hasTargetModel,
 
     // Canonical workspace sandbox path
     workspaceDirectory: config.workspace.path,

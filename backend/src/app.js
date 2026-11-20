@@ -15,7 +15,7 @@ app.use(cors({
     if (!origin || config.cors.origins.includes(origin) || config.cors.origins.includes('*')) {
       callback(null, true);
     } else {
-      callback(null, true);
+      callback(new Error("Origin is not permitted by local FORGE CORS policy."));
     }
   },
   credentials: true,

@@ -164,8 +164,8 @@ export const taskService = {
       }
       return liveTasks;
     } catch (err) {
-      console.warn('[FORGE TaskService] Live API failed, using local session history:', err);
-      return sessionHistory;
+      console.warn('[FORGE TaskService] Live task history unavailable:', err.message);
+      return [];
     }
   },
 

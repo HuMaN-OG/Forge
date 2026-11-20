@@ -8,7 +8,8 @@ export function SystemStatusBar() {
     selectedProvider, 
     selectedModel, 
     backendStatus, 
-    automationStatus 
+    automationStatus,
+    aiReadiness 
   } = useSystem();
 
   return (
@@ -21,7 +22,8 @@ export function SystemStatusBar() {
         <div className="min-w-0">
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">AI Inference</div>
           <div className="text-xs font-semibold text-slate-200 truncate mt-0.5">
-            {selectedProvider === 'ollama' ? 'Ollama' : 'Groq LPU'} &bull; <span className="font-mono text-cyan-400">{selectedModel}</span>
+            {selectedProvider === 'ollama' ? 'Ollama' : 'Provider'} &bull; <span className="font-mono text-cyan-400">{selectedModel}</span>
+            <span className={`ml-1 ${aiReadiness === 'ready' ? 'text-emerald-400' : 'text-amber-400'}`}>({aiReadiness})</span>
           </div>
         </div>
       </div>
@@ -52,7 +54,7 @@ export function SystemStatusBar() {
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Express Backend</div>
           <div className="text-xs font-semibold text-slate-200 truncate mt-0.5 flex items-center gap-1.5">
             <span className={`w-2 h-2 rounded-full ${backendStatus.status === 'connected' ? 'bg-emerald-400' : 'bg-cyan-400 animate-pulse'}`} />
-            <span>{backendStatus.status === 'connected' ? 'Connected' : 'Standalone Mock'}</span>
+            <span>{backendStatus.status === 'connected' ? 'Connected' : 'Disconnected'}</span>
           </div>
         </div>
       </div>
@@ -65,7 +67,9 @@ export function SystemStatusBar() {
         <div className="min-w-0">
           <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Automation Tools</div>
           <div className="text-xs font-semibold text-slate-200 truncate mt-0.5">
-            {automationStatus.availableToolsCount} Registered Tools
+            {automationStatus.status === 'available'
+              ? `${automationStatus.availableToolsCount} tools available`
+              : `Automation ${automationStatus.status}`}
           </div>
         </div>
       </div>

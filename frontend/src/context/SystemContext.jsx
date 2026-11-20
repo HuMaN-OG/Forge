@@ -31,11 +31,12 @@ export function SystemProvider({ children }) {
     latencyMs: null,
     isSimulated: false
   });
-  const [automationStatus] = useState({
+  const [automationStatus, setAutomationStatus] = useState({
     engine: 'Python FastAPI Engine',
-    status: 'ready',
-    availableToolsCount: 2
+    status: 'checking',
+    availableToolsCount: 0
   });
+  const [aiReadiness, setAiReadiness] = useState('checking');
 
   // Calculate effective online capability based on network + preference
   const isEffectivelyOnline = connectionMode === CONNECTION_MODES.FORCE_OFFLINE
@@ -56,9 +57,17 @@ export function SystemProvider({ children }) {
       if (status.aiProvider) {
         setSelectedProvider(status.aiProvider.active || 'ollama');
         setSelectedModel(status.aiProvider.model || 'qwen3:4b');
+        setAiReadiness(status.aiProvider.localStatus || 'offline');
       }
+      setAutomationStatus({
+        engine: status.automationTools?.engine || 'Python FastAPI Engine',
+        status: status.automationTools?.status || 'offline',
+        availableToolsCount: status.automationTools?.registeredTools?.length || 0
+      });
     } catch (err) {
-      setBackendStatus(prev => ({ ...prev, status: 'disconnected', error: err.message, isSimulated: true }));
+      setBackendStatus(prev => ({ ...prev, status: 'disconnected', error: err.message, isSimulated: false }));
+      setAutomationStatus({engine: 'Python FastAPI Engine', status: 'offline', availableToolsCount: 0});
+      setAiReadiness('offline');
     }
   };
 
@@ -111,6 +120,7 @@ export function SystemProvider({ children }) {
     setSelectedModel,
     backendStatus,
     automationStatus,
+    aiReadiness,
     currentProviderConfig: AI_PROVIDERS[selectedProvider.toUpperCase()] || AI_PROVIDERS.OLLAMA,
     refreshSystemStatus,
     testConnection

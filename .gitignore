@@ -38,3 +38,7 @@ automation/workspace_sandbox/
 *.db-shm
 *.log
 .forge-pids.json
+.forge-session-token
+logs/
+*.out.log
+*.err.log

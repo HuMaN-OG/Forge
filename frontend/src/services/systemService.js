@@ -17,15 +17,14 @@ export const systemService = {
       const liveData = await apiClient.get('/api/system/status');
       return { ...liveData, isSimulated: false };
     } catch (err) {
-      console.warn('[FORGE SystemService] Backend unreachable, falling back to simulated status:', err.message);
+      console.warn('[FORGE SystemService] Local backend unavailable:', err.message);
       return {
-        ...MOCK_SYSTEM_STATUS,
-        backend: {
-          ...MOCK_SYSTEM_STATUS.backend,
-          status: 'disconnected',
-          error: err.message
-        },
-        isSimulated: true
+        isSimulated: false,
+        backend: { status: 'disconnected', baseUrl: apiClient.getBaseUrl(),
+          latencyMs: null, error: err.message },
+        aiProvider: { active: 'ollama', model: 'qwen3:4b', localStatus: 'offline' },
+        automationTools: { engine: 'Python FastAPI Engine', status: 'offline',
+          registeredTools: [] }
       };
     }
   },

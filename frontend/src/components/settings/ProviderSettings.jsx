@@ -88,7 +88,7 @@ export function ProviderSettings() {
       <div className="p-2.5 rounded-lg bg-black/30 border border-white/[0.04] flex items-start gap-2 text-[11px] text-[#929AA8]">
         <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5 stroke-[1.75]" />
         <p className="leading-relaxed">
-          When <strong>Ollama (Local LLM)</strong> is engaged, all prompt tokens, multi-step execution graphs, and output artifacts remain entirely on local hardware. Zero network telemetry.
+          Local Ollama requests run on your computer. Cloud providers require separate configuration and may transmit prompts. Keep this demo on localhost; never assume an internet connection or cloud inference is required.
         </p>
       </div>
     </div>

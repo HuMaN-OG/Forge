@@ -105,6 +105,21 @@ pytest tests/test_automation_service.py -v
 
 ---
 
+## Local-first viva mode (no deployment required)
+
+**Use the application on your Windows laptop**, not a Vercel-hosted frontend. The Vite UI, Node/Express orchestration server, Python/FastAPI automation runtime and optional Ollama model all run on `127.0.0.1`. A cloud deployment cannot access your laptop's Ollama instance, applications, or sandbox.
+
+1. Install Node.js 22+, Python 3.11, and Ollama for Windows. Download the `qwen3:4b` model once when connected: `ollama pull qwen3:4b`.
+2. From the project root in PowerShell, execute `.\start-forge.ps1`. It checks both Node dependency trees, installs missing Python packages in an isolated virtual environment, chooses a random shared automation token, starts the three services on loopback, and checks their health.
+3. Open `http://127.0.0.1:5173`. In the system status, ensure the backend is **Connected**, automation tools are **available**, and Ollama is **ready**. If Ollama is offline, explicitly describe the fallback task router as rule-based, not local AI inference.
+4. Try `Create a folder called VivaDemo`. Inspect the approval plan, click Approve, and verify the directory under `workspace_sandbox`.
+5. Try `Create an Excel report for sales with revenue formulas`. After approval, inspect the workbook generated under `workspace_sandbox`. It is a bounded demonstration of structured tool execution, not arbitrary desktop autonomy.
+6. End with `.\stop-forge.ps1`; it uses recorded process identifiers and avoids terminating unrelated applications.
+
+**No fake demo mode:** `frontend/.env.example` defaults to `VITE_USE_MOCK=false` and port 3000. Do not turn on mock mode for a viva. The system dashboard now labels unavailable services instead of claiming that mocked tools are online.
+
+The launcher does **not** download the large Ollama model, change global PATH, access arbitrary personal files, or deploy anything. It blocks startup if a required port is already occupied. See [local viva runbook](docs/LOCAL_VIVA.md) for checks and troubleshooting. Run locally on a disposable `workspace_sandbox`, not against personal documents.
+
 ## 🚀 Running the System (Windows)
 
 ### Option A: One-Click PowerShell Launcher
