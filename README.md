@@ -113,7 +113,7 @@ pytest tests/test_automation_service.py -v
 2. From the project root in PowerShell, execute `.\start-forge.ps1`. It checks both Node dependency trees, installs missing Python packages in an isolated virtual environment, chooses a random shared automation token, starts the three services on loopback, and checks their health.
 3. Open `http://127.0.0.1:5173`. In the system status, ensure the backend is **Connected**, automation tools are **available**, and Ollama is **ready**. If Ollama is offline, explicitly describe the fallback task router as rule-based, not local AI inference.
 4. Try `Create a folder called VivaDemo`. Inspect the approval plan, click Approve, and verify the directory under `workspace_sandbox`.
-5. Try `Create an Excel report for sales with revenue formulas`. After approval, inspect the workbook generated under `workspace_sandbox`. It is a bounded demonstration of structured tool execution, not arbitrary desktop autonomy.
+5. Try `Create an Excel spreadsheet named VivaSales.xlsx with columns Item and Amount containing Laptop 25000, Mouse 500, Keyboard 1000, and total`. After approval, inspect the workbook and its `=SUM(B2:B4)` formula in `workspace_sandbox`. FORGE uses the supplied figures, not fabricated sample rows.
 6. End with `.\stop-forge.ps1`; it uses recorded process identifiers and avoids terminating unrelated applications.
 
 **No fake demo mode:** `frontend/.env.example` defaults to `VITE_USE_MOCK=false` and port 3000. Do not turn on mock mode for a viva. The system dashboard now labels unavailable services instead of claiming that mocked tools are online.

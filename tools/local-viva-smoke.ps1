@@ -25,7 +25,26 @@ try {
     Require ($result.success -eq $true) 'Approval execution failed.'
     Require (Test-Path $target -PathType Container) 'Approved folder was not created inside the sandbox.'
     Write-Host "PASS: Approved operation created $target" -ForegroundColor Green
-    Write-Host 'PASS: Local planning, approval, authenticated tool dispatch, and disk verification.' -ForegroundColor Green
+    Write-Host 'PASS: Local folder planning, approval, authenticated tool dispatch, and disk verification.' -ForegroundColor Green
+
+    # More substantive viva demonstration: real workbook with user-supplied rows.
+    $excelName = "VivaSales" + (Get-Date -Format 'HHmmssfff') + ".xlsx"
+    $excelPrompt = "Create an Excel spreadsheet named $excelName with columns Item and Amount containing Laptop 25000, Mouse 500, Keyboard 1000, and total"
+    $excelPayload = @{ message = $excelPrompt; conversationId = "viva-excel-$excelName" } | ConvertTo-Json
+    $excelPlan = Invoke-RestMethod -Uri "$base/api/v1/chat" -Method Post -ContentType 'application/json' -Body $excelPayload -TimeoutSec 25
+    Require ($excelPlan.task.status -eq 'WAITING_APPROVAL') 'Excel task bypassed approval.'
+    Require ($excelPlan.task.plannedTool -eq 'excel_writer') 'Incorrect Excel tool selected.'
+    Require ($excelPlan.task.approvalDetails.toolParams.formulas.B5 -eq '=SUM(B2:B4)') 'Expected total formula missing from the plan.'
+    $workbookPath = Join-Path (Join-Path $root 'workspace_sandbox') $excelName
+    Require (-not (Test-Path $workbookPath)) 'Excel was generated before approval.'
+    $excelResult = Invoke-RestMethod -Uri "$base/api/v1/tasks/$($excelPlan.task.id)/approve" -Method Post -ContentType 'application/json' -Body '{}' -TimeoutSec 40
+    Require ($excelResult.success -eq $true) 'Excel tool execution failed.'
+    Require (Test-Path $workbookPath -PathType Leaf) 'Workbook missing from sandbox.'
+    $python = Join-Path $root 'automation\.venv\Scripts\python.exe'
+    & $python -c 'import sys; from openpyxl import load_workbook; w=load_workbook(sys.argv[1],data_only=False); s=w.active; assert s["A1"].value=="Item"; assert s["B1"].value=="Amount"; assert s["B2"].value==25000; assert s["B5"].value=="=SUM(B2:B4)"; w.close()' $workbookPath
+    Require ($LASTEXITCODE -eq 0) 'Workbook contents or formula did not match the approved plan.'
+    Write-Host "PASS: Excel rows + SUM formula persisted: $workbookPath" -ForegroundColor Green
+
 } catch {
     Write-Host "LOCAL SMOKE FAILED: $($_.Exception.Message)" -ForegroundColor Red
     exit 1

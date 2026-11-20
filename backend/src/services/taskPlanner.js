@@ -503,12 +503,18 @@ class TaskPlanner {
 
 
 
-      // 5. Extract formulas if requested
-
-
-
+      // 5. Add a transparent SUM formula only when the request supplies numeric
+      // rows, a named numeric column, and explicitly asks for a total.
       const formulas = {};
-
+      const totalColumn = headers.findIndex(h => /^(amount|price|cost|revenue|total|value)$/i.test(String(h).trim()));
+      if (/\b(?:total|sum)\b/i.test(prompt) && rows.length > 0 &&
+          headers.length > 0 && totalColumn >= 0 && totalColumn < 26 &&
+          rows.every(row => typeof row[totalColumn] === 'number' && Number.isFinite(row[totalColumn]))) {
+        const letter = String.fromCharCode(65 + totalColumn);
+        const firstRow = 2;
+        const lastRow = rows.length + 1;
+        formulas[`${letter}${lastRow + 1}`] = `=SUM(${letter}${firstRow}:${letter}${lastRow})`;
+      }
 
 
 

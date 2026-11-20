@@ -32,7 +32,7 @@ This makes a new uniquely named folder inside `workspace_sandbox` **only after**
 1. Open **Workspace**. Say: *"Create a folder called VivaDemo"*.
 2. Show the pending plan and its target: `workspace_sandbox/VivaDemo`. **Do not approve before discussing the security gate.**
 3. Approve; inspect the created folder in the local workspace.
-4. Ask: *"Create an Excel report for sales with revenue formulas."* Review the proposed filename, rows, and actions before approving. The planner has bounded templates; it is not an open-ended spreadsheet-generation model.
+4. Ask: *"Create an Excel spreadsheet named VivaSales.xlsx with columns Item and Amount containing Laptop 25000, Mouse 500, Keyboard 1000, and total."* Review the proposed rows and `=SUM(B2:B4)` calculation before approving. FORGE uses only the numbers you provide; it does not invent a dataset or act as a general spreadsheet agent.
 5. Open Task History to show status changes and records. Verify any generated files on disk.
 6. Explain the architecture: **local natural-language routing (rules/Ollama) → task planner → human approval → authenticated Node-to-Python tool call → sandbox file → SQLite task history**.
 

@@ -42,6 +42,15 @@ async function run() {
   assert.strictEqual(folderPlan.approvalDetails.toolParams.targetDirectory, 'VivaDemo');
   assert.strictEqual(folderPlan.plannedTool, 'file_system');
 
+  const workbookPlan = await taskPlanner.planTask(
+    'Create an Excel spreadsheet named VivaSales.xlsx with columns Item and Amount containing Laptop 25000, Mouse 500, Keyboard 1000, and total'
+  );
+  assert.strictEqual(workbookPlan.plannedTool, 'excel_writer');
+  assert.deepStrictEqual(workbookPlan.approvalDetails.toolParams.headers, ['Item', 'Amount']);
+  assert.deepStrictEqual(workbookPlan.approvalDetails.toolParams.rows,
+    [['Laptop', 25000], ['Mouse', 500], ['Keyboard', 1000]]);
+  assert.strictEqual(workbookPlan.approvalDetails.toolParams.formulas.B5, '=SUM(B2:B4)');
+
   // 4. Task Query & Update Test
   const fetched = taskRepository.findById(task.id);
   assert.strictEqual(fetched.id, task.id);
