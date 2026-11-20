@@ -41,7 +41,7 @@ try {
     Require ($excelResult.success -eq $true) 'Excel tool execution failed.'
     Require (Test-Path $workbookPath -PathType Leaf) 'Workbook missing from sandbox.'
     $python = Join-Path $root 'automation\.venv\Scripts\python.exe'
-    & $python -c 'import sys; from openpyxl import load_workbook; w=load_workbook(sys.argv[1],data_only=False); s=w.active; assert s["A1"].value=="Item"; assert s["B1"].value=="Amount"; assert s["B2"].value==25000; assert s["B5"].value=="=SUM(B2:B4)"; w.close()' $workbookPath
+    & $python -c "import sys; from openpyxl import load_workbook; w=load_workbook(sys.argv[1],data_only=False); s=w.active; assert s['A1'].value=='Item'; assert s['B1'].value=='Amount'; assert s['B2'].value==25000; assert s['B5'].value=='=SUM(B2:B4)'; w.close()" $workbookPath
     Require ($LASTEXITCODE -eq 0) 'Workbook contents or formula did not match the approved plan.'
     Write-Host "PASS: Excel rows + SUM formula persisted: $workbookPath" -ForegroundColor Green
 
