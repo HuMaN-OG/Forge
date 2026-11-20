@@ -123,7 +123,8 @@ class TaskPlanner {
       title = 'Create Workspace Folder';
       plannedTool = REGISTERED_TOOLS.FILE_SYSTEM;
       toolAction = 'create_directory';
-      const folderMatch = prompt.match(/(?:folder|directory|named|called|as)\s+["']?([a-zA-Z0-9_\-]+)["']?/i);
+      const folderMatch = prompt.match(/\b(?:named|called)\s+["']?([a-zA-Z0-9_\-]+)["']?/i) ||
+        prompt.match(/\b(?:folder|directory)\s+["']?([a-zA-Z0-9_\-]+)["']?/i);
       const folderName = folderMatch ? folderMatch[1] : 'FORGE_Management_Test';
       toolParams = { action: 'create_directory', targetDirectory: folderName };
       impactDescription = `Create subfolder '${folderName}' inside workspace sandbox.`;

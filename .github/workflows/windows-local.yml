@@ -1,0 +1,41 @@
+name: Windows local automation contract
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'start-forge.ps1'
+      - 'stop-forge.ps1'
+      - 'tools/local-viva-smoke.ps1'
+      - 'automation/**'
+      - 'backend/**'
+      - 'frontend/**'
+      - '.github/workflows/windows-local.yml'
+jobs:
+  local-smoke:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Start local FORGE in explicit no-Ollama mode
+        shell: pwsh
+        run: .\start-forge.ps1 -SkipOllama
+      - name: Run real approval and sandbox file smoke
+        shell: pwsh
+        run: .\tools\local-viva-smoke.ps1
+      - name: Stop tracked FORGE processes
+        if: always()
+        shell: pwsh
+        run: .\stop-forge.ps1
+      - name: Upload logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: forge-local-windows-logs
+          path: logs/
+          if-no-files-found: ignore

@@ -36,6 +36,12 @@ async function run() {
   assert.strictEqual(task.steps.length, 7);
   console.log('✓ Task planning (Excel) passed with 7 lifecycle stages');
 
+  // User-facing demo prompt must target the explicitly named folder, not "called".
+  const folderPlan = await taskPlanner.planTask('Create a folder called VivaDemo');
+  assert.strictEqual(folderPlan.status, 'WAITING_APPROVAL');
+  assert.strictEqual(folderPlan.approvalDetails.toolParams.targetDirectory, 'VivaDemo');
+  assert.strictEqual(folderPlan.plannedTool, 'file_system');
+
   // 4. Task Query & Update Test
   const fetched = taskRepository.findById(task.id);
   assert.strictEqual(fetched.id, task.id);
