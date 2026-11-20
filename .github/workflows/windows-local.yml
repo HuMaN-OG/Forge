@@ -22,16 +22,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Start local FORGE in explicit no-Ollama mode
+      - name: Start services and test an approved sandbox operation
         shell: pwsh
-        run: .\start-forge.ps1 -SkipOllama
-      - name: Run real approval and sandbox file smoke
-        shell: pwsh
-        run: .\tools\local-viva-smoke.ps1
-      - name: Stop tracked FORGE processes
-        if: always()
-        shell: pwsh
-        run: .\stop-forge.ps1
+        run: |
+          .\start-forge.ps1 -SkipOllama
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          try {
+            .\tools\local-viva-smoke.ps1
+            if ($LASTEXITCODE -ne 0) { throw 'Local sandbox smoke test failed.' }
+          } finally {
+            .\stop-forge.ps1
+          }
       - name: Upload logs on failure
         if: failure()
         uses: actions/upload-artifact@v4

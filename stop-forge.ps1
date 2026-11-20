@@ -26,7 +26,7 @@ foreach ($entry in $record.PSObject.Properties) {
     $started = ([datetime]$details.startedUtc).ToUniversalTime()
     $ageDifference = [Math]::Abs(($created - $started).TotalSeconds)
     if ($ageDifference -gt 60 -or -not $expected.ContainsKey($name) -or $commandLine -notmatch $expected[$name]) {
-        Write-Warning "Skipping PID $processId: it no longer matches the recorded FORGE $name process."
+        Write-Warning "Skipping PID  $($processId): it no longer matches the recorded FORGE $name process."
         continue
     }
     Stop-Process -Id $processId -Force -ErrorAction SilentlyContinue
