@@ -39,30 +39,38 @@ router.get('/', (req, res, next) => {
       }
     }
 
-    // 2. Also discover any existing files in canonical workspace
+    // 2. Also discover any existing files in canonical workspace (including subfolders)
     if (fs.existsSync(canonicalWorkspace)) {
-      const dirEntries = fs.readdirSync(canonicalWorkspace);
-      for (const entry of dirEntries) {
-        const fullPath = path.resolve(canonicalWorkspace, entry);
-        if (!seenPaths.has(fullPath) && fs.statSync(fullPath).isFile()) {
-          seenPaths.add(fullPath);
-          const stat = fs.statSync(fullPath);
-          const ext = path.extname(entry).replace('.', '').toLowerCase();
+      const scanDir = (dir) => {
+        try {
+          const entries = fs.readdirSync(dir, { withFileTypes: true });
+          for (const entry of entries) {
+            const fullPath = path.resolve(dir, entry.name);
+            if (entry.isDirectory()) {
+              scanDir(fullPath);
+            } else if (entry.isFile() && !seenPaths.has(fullPath)) {
+              seenPaths.add(fullPath);
+              const stat = fs.statSync(fullPath);
+              const ext = path.extname(entry.name).replace('.', '').toLowerCase();
+              const relPath = path.relative(canonicalWorkspace, fullPath).replace(/\\/g, '/');
 
-          recordedFiles.push({
-            id: `file-${recordedFiles.length + 1}`,
-            taskId: 'direct_workspace',
-            name: entry,
-            path: fullPath,
-            extension: ext,
-            type: ext,
-            size: stat.size,
-            createdAt: stat.birthtime.toISOString(),
-            isAvailableLocally: true,
-            description: `Workspace file located in canonical sandbox`
-          });
-        }
-      }
+              recordedFiles.push({
+                id: `file-${recordedFiles.length + 1}`,
+                taskId: 'direct_workspace',
+                name: relPath,
+                path: fullPath,
+                extension: ext,
+                type: ext,
+                size: stat.size,
+                createdAt: stat.birthtime.toISOString(),
+                isAvailableLocally: true,
+                description: `Workspace file located in canonical sandbox (${relPath})`
+              });
+            }
+          }
+        } catch (_) {}
+      };
+      scanDir(canonicalWorkspace);
     }
 
     let filtered = recordedFiles;
