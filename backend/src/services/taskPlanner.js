@@ -249,6 +249,11 @@ class TaskPlanner {
       const appMatch = prompt.match(/\b(?:launch|open|start|run)\b\s+(?:approved\s+)?(?:the\s+)?(?:app(?:lication)?\s+)?([a-zA-Z0-9_\-\s]{2,35}?)(?:\s+(?:at|in)\s+.*|\s+app|\s+application)?$/i) ||
                        prompt.match(/\b(?:launch|open|start|run)\b\s+(?:approved\s+)?(?:the\s+)?(?:app(?:lication)?\s+)?([a-zA-Z0-9_\-]+)/i);
       let appName = appMatch ? appMatch[1].trim() : 'notepad';
+      appName = appName.replace(/\s+(?:browser|app(?:lication)?|software|program)\s*$/i, '').trim();
+      if (/^(?:google\s+)?chrome$/i.test(appName)) appName = 'chrome';
+      if (/^brave$/i.test(appName)) appName = 'brave';
+      if (/^(?:ms\s*|microsoft\s+)?edge$/i.test(appName)) appName = 'edge';
+      if (/^(?:mozilla\s+)?firefox$/i.test(appName)) appName = 'firefox';
       if (/^file\s+explorer$/i.test(appName)) appName = 'file_explorer';
       if (/^vs\s*code$/i.test(appName)) appName = 'vscode';
       if (/^ppt$/i.test(appName)) appName = 'powerpoint';

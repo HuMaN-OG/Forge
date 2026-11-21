@@ -198,6 +198,16 @@ APPROVED_APPLICATIONS = {
 
     },
 
+    "brave": {
+
+        "binary": "brave.exe",
+
+        "title_pattern": r".*Brave.*",
+
+        "doc_control_type": None
+
+    },
+
     "edge": {
 
         "binary": "msedge.exe",
@@ -285,8 +295,15 @@ COMMON_SYSTEM_ALIASES = {
     "vs code": ("Code.exe", ""),
     "code": ("Code.exe", ""),
     "brave": ("brave.exe", ""),
+    "brave browser": ("brave.exe", ""),
     "chrome": ("chrome.exe", ""),
+    "chrome browser": ("chrome.exe", ""),
+    "google chrome": ("chrome.exe", ""),
+    "google chrome browser": ("chrome.exe", ""),
     "edge": ("msedge.exe", ""),
+    "edge browser": ("msedge.exe", ""),
+    "microsoft edge": ("msedge.exe", ""),
+    "microsoft edge browser": ("msedge.exe", ""),
 }
 
 _START_APPS_CACHE = None
@@ -318,67 +335,105 @@ def resolve_any_application(app_name: str) -> Optional[Tuple[str, str, str]]:
     Universally resolves ANY application installed on the user's laptop.
     Returns (executable_or_launcher, args, app_display_name).
     """
-    clean = app_name.strip().lower().replace("_", " ")
+    if not app_name:
+        return None
 
-    # 1. System aliases
-    if clean in COMMON_SYSTEM_ALIASES:
-        binary, args = COMMON_SYSTEM_ALIASES[clean]
-        p = shutil.which(binary)
-        target = p if p else binary
-        return (target, args, app_name)
+    raw = app_name.strip().lower().replace("_", " ")
+    clean_stripped = re.sub(r"\s+(?:browser|app(?:lication)?|software|program)$", "", raw).strip()
+    normalized_keys = [raw]
+    if clean_stripped and clean_stripped != raw:
+        normalized_keys.append(clean_stripped)
+    for k in list(normalized_keys):
+        core = re.sub(r"^(?:google\s+|microsoft\s+|ms\s+|mozilla\s+)", "", k).strip()
+        if core and core not in normalized_keys:
+            normalized_keys.append(core)
 
-    # 2. PATH directly
-    for candidate in [clean, clean.replace(" ", ""), clean.replace(" ", "-"), f"{clean}.exe"]:
-        p = shutil.which(candidate)
-        if p and os.path.isfile(p):
-            return (p, "", app_name)
+    # 1. Check approved executable or ProgramFiles hints first for absolute path
+    for cand in normalized_keys:
+        approved_path = resolve_approved_executable(cand)
+        if approved_path and os.path.isfile(approved_path):
+            return (approved_path, "", cand)
 
-    # 3. Windows Registry App Paths (HKLM & HKCU)
-    for root in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
-        try:
-            with winreg.OpenKey(root, r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths") as key:
-                num_subkeys = winreg.QueryInfoKey(key)[0]
-                for i in range(num_subkeys):
-                    name = winreg.EnumKey(key, i).lower()
-                    stem = os.path.splitext(name)[0]
-                    clean_no_space = clean.replace(" ", "")
-                    if clean == stem or clean == name or clean_no_space == stem or clean_no_space == name:
-                        with winreg.OpenKey(key, winreg.EnumKey(key, i)) as subkey:
-                            val, _ = winreg.QueryValueEx(subkey, "")
-                            if val and os.path.isfile(val):
-                                return (val, "", stem)
-        except Exception:
-            pass
+    # 2. System aliases with PATH or approved path fallback
+    for cand in normalized_keys:
+        if cand in COMMON_SYSTEM_ALIASES:
+            binary, args = COMMON_SYSTEM_ALIASES[cand]
+            p = shutil.which(binary)
+            if not p:
+                p = resolve_approved_executable(cand)
+            target = p if p else binary
+            if os.path.isfile(target) or shutil.which(target):
+                return (target, args, cand)
 
-    # 4. Start Menu Shortcuts (.lnk files)
+    # 3. PATH directly
+    for cand in normalized_keys:
+        for candidate in [cand, cand.replace(" ", ""), cand.replace(" ", "-"), f"{cand}.exe"]:
+            p = shutil.which(candidate)
+            if p and os.path.isfile(p):
+                return (p, "", cand)
+
+    # 4. Windows Registry App Paths (HKLM & HKCU)
+    for cand in normalized_keys:
+        for root in (winreg.HKEY_LOCAL_MACHINE, winreg.HKEY_CURRENT_USER):
+            try:
+                with winreg.OpenKey(root, r"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths") as key:
+                    num_subkeys = winreg.QueryInfoKey(key)[0]
+                    for i in range(num_subkeys):
+                        name = winreg.EnumKey(key, i).lower()
+                        stem = os.path.splitext(name)[0]
+                        cand_no_space = cand.replace(" ", "")
+                        if cand == stem or cand == name or cand_no_space == stem or cand_no_space == name:
+                            with winreg.OpenKey(key, winreg.EnumKey(key, i)) as subkey:
+                                val, _ = winreg.QueryValueEx(subkey, "")
+                                if val and os.path.isfile(val):
+                                    return (val, "", stem)
+            except Exception:
+                pass
+
+    # 5. Start Menu Shortcuts (.lnk files)
     start_dirs = [
         Path(os.environ.get("ProgramData", "C:\\ProgramData")) / "Microsoft\\Windows\\Start Menu\\Programs",
         Path(os.environ.get("APPDATA", "")) / "Microsoft\\Windows\\Start Menu\\Programs"
     ]
-    for s_dir in start_dirs:
-        if s_dir.exists():
-            for lnk in s_dir.rglob("*.lnk"):
-                stem = lnk.stem.lower()
-                clean_no_space = clean.replace(" ", "")
-                stem_no_space = stem.replace(" ", "").replace("-", "")
-                if clean == stem or clean_no_space == stem_no_space:
-                    return ("C:\\Windows\\explorer.exe", f'"{str(lnk.resolve())}"', lnk.stem)
+    for cand in normalized_keys:
+        cand_no_space = cand.replace(" ", "")
+        for s_dir in start_dirs:
+            if s_dir.exists():
+                for lnk in s_dir.rglob("*.lnk"):
+                    stem = lnk.stem.lower()
+                    stem_no_space = stem.replace(" ", "").replace("-", "")
+                    if cand == stem or cand_no_space == stem_no_space:
+                        return ("C:\\Windows\\explorer.exe", f'"{str(lnk.resolve())}"', lnk.stem)
 
-    for s_dir in start_dirs:
-        if s_dir.exists():
-            for lnk in s_dir.rglob("*.lnk"):
-                stem = lnk.stem.lower()
-                if clean in stem or stem in clean:
-                    return ("C:\\Windows\\explorer.exe", f'"{str(lnk.resolve())}"', lnk.stem)
+    for cand in normalized_keys:
+        for s_dir in start_dirs:
+            if s_dir.exists():
+                for lnk in s_dir.rglob("*.lnk"):
+                    stem = lnk.stem.lower()
+                    if cand in stem or stem in cand:
+                        return ("C:\\Windows\\explorer.exe", f'"{str(lnk.resolve())}"', lnk.stem)
 
-    # 5. Get-StartApps / Windows Packaged Apps
+    # 6. Word-level matching for Start Menu (.lnk files)
+    for cand in normalized_keys:
+        cand_words = set(w for w in cand.split() if len(w) > 2 and w not in ('the', 'app', 'browser', 'open'))
+        if cand_words:
+            for s_dir in start_dirs:
+                if s_dir.exists():
+                    for lnk in s_dir.rglob("*.lnk"):
+                        stem_words = set(lnk.stem.lower().split())
+                        if cand_words.issubset(stem_words) or (len(cand_words) == 1 and cand_words.intersection(stem_words)):
+                            return ("C:\\Windows\\explorer.exe", f'"{str(lnk.resolve())}"', lnk.stem)
+
+    # 7. Get-StartApps / Windows Packaged Apps
     start_apps = get_start_apps_cache()
-    if clean in start_apps:
-        app_id = start_apps[clean]
-        return ("C:\\Windows\\explorer.exe", f"shell:AppsFolder\\{app_id}", clean)
-    for name, app_id in start_apps.items():
-        if clean in name or name in clean:
-            return ("C:\\Windows\\explorer.exe", f"shell:AppsFolder\\{app_id}", name)
+    for cand in normalized_keys:
+        if cand in start_apps:
+            app_id = start_apps[cand]
+            return ("C:\\Windows\\explorer.exe", f"shell:AppsFolder\\{app_id}", cand)
+    for cand in normalized_keys:
+        for name, app_id in start_apps.items():
+            if cand in name or name in cand:
+                return ("C:\\Windows\\explorer.exe", f"shell:AppsFolder\\{app_id}", name)
 
     return None
 
@@ -469,6 +524,8 @@ def resolve_approved_executable(app_key: str) -> Optional[str]:
         "ppt": ["Microsoft Office\\root\\Office16\\POWERPNT.EXE", "Microsoft Office\\Office16\\POWERPNT.EXE"],
 
         "chrome": ["Google\\Chrome\\Application\\chrome.exe"],
+
+        "brave": ["BraveSoftware\\Brave-Browser\\Application\\brave.exe"],
 
         "edge": ["Microsoft\\Edge\\Application\\msedge.exe"],
 
